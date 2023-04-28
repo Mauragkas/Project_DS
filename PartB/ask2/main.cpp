@@ -201,11 +201,11 @@ void preorder(Node *root) {
     preorder(root->right);
 }
 
-void printDates(Node *root, string date) {
+void printDates(Node *root, int value) {
     if (root == NULL) {
         return;
     }
-    if (root->data.Date == date) {
+    if (root->data.Value == value) {
         cout << root->data.Direction << ", "
             << root->data.Year << ", "
             << root->data.Date << ", "
@@ -217,8 +217,8 @@ void printDates(Node *root, string date) {
             << root->data.Value << ", "
             << root->data.Cumulative << endl;
     }
-    printDates(root->left, date);
-    printDates(root->right, date);
+    printDates(root->left, value);
+    printDates(root->right, value);
 }
 
 int getLength(Node *root) {
@@ -247,13 +247,15 @@ int main() {
             case 1: {
                 Node *maxNode = nodeWithMaxValue(root);
                 cout << "\n\tDate with Max value: " << maxNode->data.Date << endl;
-                printDates(root, maxNode->data.Date);
+                cout << maxNode->data.Value << endl;
+                printDates(root, maxNode->data.Value);
                 break;
             }
             case 2: {
                 Node *minNode = nodeWithMinValue(root);
                 cout << "\n\tDate with Min value: " << minNode->data.Date << endl;
-                printDates(root, minNode->data.Date);
+                cout << minNode->data.Value << endl;
+                printDates(root, minNode->data.Value);
                 break;
             }
             case 3: {
