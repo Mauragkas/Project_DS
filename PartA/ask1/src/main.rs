@@ -1,6 +1,9 @@
 #[allow(unused)]
 use std::fs::File;
 use std::io::Write;
+use std::time::SystemTime;
+use std::sync::{Arc, Mutex};
+use std::thread;
 
 #[derive(Debug, Clone)]
 struct Data {
@@ -33,28 +36,32 @@ impl Data {
     }
 }
  
-fn counting_sort(data: &Vec<Data>) -> Vec<Data> {
+fn counting_sort(data: &mut Vec<Data>) {
     let max_value = data.iter().map(|d| d.value).max().unwrap() as usize;
-    // println!("max_value: {}", max_value);
+
     let min_value = data.iter().map(|d| d.value).min().unwrap() as usize;
-    // println!("min_value: {}", min_value);
+
+    // time for counting sort
+    let start = SystemTime::now();
 
     let mut count_vec = vec![0; max_value - min_value + 1];
-    for d in data {
-        count_vec[d.value as usize - min_value] += 1;
-    }
+    data.iter().for_each(|d| count_vec[d.value as usize - min_value] += 1);
 
     for i in 1..count_vec.len() {
         count_vec[i] += count_vec[i - 1];
     }
 
+    let end = SystemTime::now();
+    let time = end.duration_since(start).unwrap().as_millis();
+    println!("Time for counting sort: {} ms", time);
+
     let mut sorted_data = vec![Data::new(); data.len()];
-    for d in data {
+    data.iter().rev().for_each(|d| {
         sorted_data[count_vec[d.value as usize - min_value] - 1] = d.clone();
         count_vec[d.value as usize - min_value] -= 1;
-    }
-    
-    return sorted_data;
+    });
+
+    data.iter_mut().enumerate().for_each(|(i, d)| *d = sorted_data[i].clone());
 }
 
 fn merge(left_vec: &Vec<Data>, right_vec: &Vec<Data>) -> Vec<Data> {
@@ -176,17 +183,43 @@ fn surround_with_quotes_if_comma(string: &str) -> String {
     }
 }
 
+fn user_input() -> String {
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input).unwrap();
+    input = input.trim().to_string();
+    input
+}
+
 fn main() {
-    let data_vector = read_data("effects.csv");
-    print_data(&data_vector);
+    let mut data_vector = read_data("effects.csv");
+    
+    println!("Select sorting algorithm:");
+    println!("1. Counting sort");
+    println!("2. Merge sort");
+    print!("Enter your choice: ");
+    std::io::stdout().flush().unwrap();
 
-    let cs_vector = counting_sort(&data_vector);
-    println!("cs_vector Done!");
-    save_to_file(&cs_vector, "cs.csv");
+    let choice = user_input();
 
-    let ms_vector = merge_sort(&data_vector);
-    println!("ms_vector Done!");
-    save_to_file(&ms_vector, "ms.csv");
+    match choice.as_str() {
+        "1" => {
+            let start = SystemTime::now();
+            // let sorted_data = counting_sort(&data_vector);
+            counting_sort(&mut data_vector);
+            let end = SystemTime::now();
+            // print_data(&data_vector);
+            println!("Counting sort took {} ms", end.duration_since(start).unwrap().as_millis());
 
-    println!("Done!");
+        },
+        "2" => {
+            let start = SystemTime::now();
+            let sorted_data = merge_sort(&data_vector);
+            let end = SystemTime::now();
+            print_data(&sorted_data);
+            println!("Merge sort took {} ms", end.duration_since(start).unwrap().as_millis());
+        },
+        _ => {
+            println!("Invalid choice");
+        }
+    }
 }
