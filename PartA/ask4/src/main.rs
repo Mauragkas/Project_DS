@@ -1,6 +1,7 @@
 #[allow(unused)]
 use std::fs::File;
 use std::io::{self, Write};
+use std::time::SystemTime;
 
 #[derive(Debug)]
 struct Data {
@@ -137,12 +138,14 @@ fn main() {
         return;
     }
 
-    // let (found, index) = jump_search(&data, &input);
+    let start = SystemTime::now();
     let (found, index) = bis(&data, &input);
 
     if found {
         println!("{index}");
         println!("{:?}", data[index]);
+        let end = SystemTime::now();
+        println!("{}ns", end.duration_since(start).unwrap().as_nanos());
     } else {
         println!("Date not found");
     }
