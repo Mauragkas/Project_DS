@@ -38,19 +38,12 @@ fn counting_sort(data: &mut Vec<Data>) {
 
     let min_value = data.iter().map(|d| d.value).min().unwrap() as usize;
 
-    // time for counting sort
-    let start = SystemTime::now();
-
     let mut count_vec = vec![0; max_value - min_value + 1];
     data.iter().for_each(|d| count_vec[d.value as usize - min_value] += 1);
 
     for i in 1..count_vec.len() {
         count_vec[i] += count_vec[i - 1];
     }
-
-    let end = SystemTime::now();
-    let time = end.duration_since(start).unwrap().as_millis();
-    println!("Time for counting sort: {} ms", time);
 
     let mut sorted_data = vec![Data::new(); data.len()];
     data.iter().rev().for_each(|d| {
