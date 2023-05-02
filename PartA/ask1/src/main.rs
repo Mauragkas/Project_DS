@@ -2,9 +2,6 @@
 use std::fs::File;
 use std::io::Write;
 use std::time::SystemTime;
-use std::sync::{Arc, Mutex};
-use std::thread;
-
 #[derive(Debug, Clone)]
 struct Data {
     direction: String,
