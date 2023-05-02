@@ -197,6 +197,22 @@ fn user_input() -> String {
     input
 }
 
+fn print_data(data: &Data) {
+    println!(
+        "{}, {}, {}, {}, {}, {}, {}, {}, {}, {}",
+        data.direction,
+        data.year,
+        data.date,
+        data.weekday,
+        data.country,
+        data.comodity,
+        data.transport_mode,
+        data.measure,
+        data.value,
+        data.cumulative
+    );
+}
+
 fn main() {
     let mut vec = read_data("effects.csv");
     
@@ -223,7 +239,7 @@ fn main() {
                         continue;
                     }
                 };
-                println!("{:?}", node.data);
+                print_data(&node.data);
             },
             "2" => {
                 print!("Enter date: ");
