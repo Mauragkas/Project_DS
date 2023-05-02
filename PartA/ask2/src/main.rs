@@ -1,6 +1,7 @@
 #[allow(unused)]
 use std::fs::File;
 use std::io::Write;
+use std::time::SystemTime;
 
 struct Data {
     direction: String,
@@ -155,30 +156,47 @@ fn surround_with_quotes_if_comma(string: &str) -> String {
         String::from(string)
     }
 }
+
+fn user_input() -> String {
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input).unwrap();
+    input = input.trim().to_string();
+    input
+}
+
 fn main() {
     // let mut input = String::new();
 
     let mut data = read_data("effects.csv");
     let len = data.len();
-    print_data(&data);
+    
+    println!("--------------------------------");
+    println!("{} records", data.len());
+    println!("--------------------------------");
 
-    // wait for user input to continue
-    println!("Press enter to heap sort");
-    // std::io::stdin().read_line(&mut input).unwrap();
+    println!("Sort with:");
+    println!("1. Heap Sort");
+    println!("2. Quick Sort");
 
-    let heap_sorted_data = heap_sort(&mut data);
-    print_data(&heap_sorted_data);
-    save_to_file(&heap_sorted_data, "heap_sorted_data.csv");
+    print!("Enter your choice: ");
+    std::io::stdout().flush().unwrap();
+    let choice = user_input();
 
-    // wait for user input to continue
-    println!("Press enter to quick sort");
-    // std::io::stdin().read_line(&mut input).unwrap();
+    match choice.as_str() {
+        "1" => {
+            let start = SystemTime::now();
+            heap_sort(&mut data);
+            let end = SystemTime::now();
+            println!("Heap Sort took {} ms", end.duration_since(start).unwrap().as_millis());
+        },
+        "2" => {
+            let start = SystemTime::now();
+            quick_sort(&mut data, 0, len - 1);
+            let end = SystemTime::now();
+            println!("Quick Sort took {} ms", end.duration_since(start).unwrap().as_millis());
+        },
 
-    let quick_sorted_data = quick_sort(&mut data, 0, len - 1);
-    print_data(&quick_sorted_data);
-    save_to_file(&quick_sorted_data, "quick_sorted_data.csv");
+        _ => println!("Invalid choice"),
+    }
 
-    // wait for user input to continue
-    println!("Press enter to exit");
-    // std::io::stdin().read_line(&mut input).unwrap();
 }
