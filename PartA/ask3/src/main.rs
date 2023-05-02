@@ -16,14 +16,13 @@ struct Data {
     cumulative: u64,
 }
 
-fn convert_date_to_days(date: &str) -> u32 {
-    let date_vec: Vec<&str> = date.split("/").collect();
-    let day = date_vec[0].parse::<u32>().unwrap();
-    let month = date_vec[1].parse::<u32>().unwrap();
-    let year = date_vec[2].parse::<u32>().unwrap();
-
-    // return (year - 2015) * 365 + month * 30 + day;
-    return year * 365 + month * 30 + day;
+fn convert_date_to_days(date_str: &str) -> u32 {
+    let mut parts = date_str.split('/');
+    let day = parts.next().unwrap().parse::<u32>().unwrap();
+    let month = parts.next().unwrap().parse::<u32>().unwrap();
+    let year = parts.next().unwrap().parse::<u32>().unwrap();
+    
+    year * 365 + month * 30 + day
 }
 
 fn read_data(filename: &str) -> Vec<Data> {
