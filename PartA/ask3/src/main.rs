@@ -1,6 +1,7 @@
 #[allow(unused)]
 use std::fs::File;
 use std::io::{self, Write};
+use std::time::SystemTime;
 
 #[derive(Debug, Clone)]
 struct Data {
@@ -129,7 +130,11 @@ fn print_data_line(data: &Vec<Data>, index: usize) {
 }
 
 fn main() {
+    let start = SystemTime::now();
     let data = read_data("cs.csv");
+    let end = SystemTime::now();
+
+    println!("Time elapsed: {:?}", end.duration_since(start).unwrap());
     
     let input = user_input();
 
@@ -138,13 +143,19 @@ fn main() {
         return;
     }
 
+    let start = SystemTime::now();
     let index = binary_search(&data, 0, data.len() - 1, input.trim()) as usize;
+    let end = SystemTime::now();
     println!("\nbinary search Done!");
+    println!("Time elapsed: {:?}ns", end.duration_since(start).unwrap().as_nanos());
     
     print_data_line(&data, index);
 
+    let start = SystemTime::now();
     let index = interpolation_search(&data, 0, data.len() - 1, input.trim()) as usize;
+    let end = SystemTime::now();
     println!("\ninterpolation search Done!");
+    println!("Time elapsed: {:?}ns", end.duration_since(start).unwrap().as_nanos());
 
     let index = index;
     print_data_line(&data, index);
