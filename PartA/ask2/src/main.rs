@@ -187,12 +187,14 @@ fn main() {
             let start = SystemTime::now();
             heap_sort(&mut data);
             let end = SystemTime::now();
+            print_data(&data);
             println!("Heap Sort took {} ms", end.duration_since(start).unwrap().as_millis());
         },
         "2" => {
             let start = SystemTime::now();
             quick_sort(&mut data, 0, len - 1);
             let end = SystemTime::now();
+            print_data(&data);
             println!("Quick Sort took {} ms", end.duration_since(start).unwrap().as_millis());
         },
 
