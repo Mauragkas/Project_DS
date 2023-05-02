@@ -2,6 +2,7 @@
 use std::fs::File;
 use std::io::Write;
 use std::time::SystemTime;
+
 #[derive(Debug, Clone)]
 struct Data {
     direction: String,
