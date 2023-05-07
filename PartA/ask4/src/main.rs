@@ -3,6 +3,7 @@ use std::fs::File;
 use std::io::{self, Write};
 use std::time::SystemTime;
 
+#[allow(unused)]
 #[derive(Debug)]
 struct Data {
     direction: String,
@@ -17,13 +18,13 @@ struct Data {
     cumulative: u64,
 }
 
-fn date_to_days(date: &str) -> u32 {
-    let date_vec: Vec<&str> = date.split("/").collect();
-    let day = date_vec[0].parse::<u32>().unwrap();
-    let month = date_vec[1].parse::<u32>().unwrap();
-    let year = date_vec[2].parse::<u32>().unwrap();
-
-    return year * 365 + month * 30 + day;
+fn date_to_days(date_str: &str) -> u32 {
+    let mut parts = date_str.split('/');
+    let day = parts.next().unwrap().parse::<u32>().unwrap();
+    let month = parts.next().unwrap().parse::<u32>().unwrap();
+    let year = parts.next().unwrap().parse::<u32>().unwrap();
+    
+    year * 365 + month * 30 + day
 }
 
 fn read_data(filename: &str) -> Vec<Data> {
