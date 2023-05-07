@@ -130,6 +130,7 @@ fn print_data(data: &Vec<Data>) {
     println!("--------------------------------");
 }
 
+#[allow(dead_code)]
 fn save_to_file(data: &Vec<Data>, filename: &str) {
     let mut file = File::create(filename).expect("Unable to create file");
     writeln!(file, "Direction,Year,Date,Weekday,Country,Commodity,Transport_Mode,Measure,Value,Cumulative").expect("Unable to write header");
