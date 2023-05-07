@@ -16,7 +16,7 @@ struct Data {
     cumulative: u64,
 }
 
-fn heapify(data: &mut Vec<Data>, n: usize, i: usize) {
+fn heapify(data: &mut [Data], n: usize, i: usize) {
     let mut largest = i;
     let l = 2 * i + 1;
     let r = 2 * i + 2;
@@ -35,7 +35,7 @@ fn heapify(data: &mut Vec<Data>, n: usize, i: usize) {
     }
 }
 
-fn heap_sort(data: &mut Vec<Data>) -> &Vec<Data> {
+fn heap_sort(data: &mut [Data]) -> &mut [Data] {
     let n = data.len();
     for i in (0..n / 2).rev() {
         heapify(data, n, i);
@@ -43,35 +43,36 @@ fn heap_sort(data: &mut Vec<Data>) -> &Vec<Data> {
 
     for i in (0..n).rev() {
         data.swap(0, i);
-        heapify(data, i, 0);
+        heapify(&mut data[..i], i, 0);
     }
 
-    return data;
+    data
 }
 
-fn partition(data: &mut Vec<Data>, low: usize, high: usize) -> usize {
+fn partition(data: &mut [Data], low: usize, high: usize) -> usize {
     let pivot = data[high].cumulative;
     let mut i = low;
-    for j in low..high {
+    let mut j = low;
+    while j < high {
         if data[j].cumulative < pivot {
             data.swap(i, j);
             i += 1;
         }
+        j += 1;
     }
     data.swap(i, high);
-    return i;
+    i
 }
 
-fn quick_sort(data: &mut Vec<Data>, low: usize, high: usize) -> &Vec<Data> {
+fn quick_sort(data: &mut [Data], low: usize, high: usize) -> &mut [Data] {
     if low < high {
         let pi = partition(data, low, high);
-        // println!("{} {} {}", low, high, pi);
         if pi > low {
             quick_sort(data, low, pi - 1);
         }
         quick_sort(data, pi + 1, high);
     }
-    return data;
+    data
 }
 
 fn read_data(filename: &str) -> Vec<Data> {
@@ -106,7 +107,7 @@ fn read_data(filename: &str) -> Vec<Data> {
             });
     }
 
-    return data;
+    data
 }
 
 fn print_data(data: &Vec<Data>) {
