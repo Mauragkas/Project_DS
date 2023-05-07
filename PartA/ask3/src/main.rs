@@ -60,7 +60,7 @@ fn read_data(filename: &str) -> Vec<Data> {
     return data;
 }
 
-fn binary_search(data: &Vec<Data>, low: usize, high: usize, date: &str) -> usize {
+fn binary_search(data: &Vec<Data>, low: usize, high: usize, date_key: u32) -> usize {
     if high < low {
         return low;
     }
@@ -68,29 +68,29 @@ fn binary_search(data: &Vec<Data>, low: usize, high: usize, date: &str) -> usize
     let mid = (low + high) / 2;
     let mid_days = convert_date_to_days(&data[mid].date);
 
-    if mid_days == convert_date_to_days(date) {
+    if mid_days == date_key {
         return mid;
-    } else if mid_days > convert_date_to_days(date) {
-        return binary_search(data, low, mid - 1, date);
+    } else if mid_days > date_key {
+        return binary_search(data, low, mid - 1, date_key);
     } else {
-        return binary_search(data, mid + 1, high, date);
+        return binary_search(data, mid + 1, high, date_key);
     }
 }
 
-fn interpolation_search(data: &Vec<Data>, low: usize, high: usize, date: &str) -> usize {
+fn interpolation_search(data: &Vec<Data>, low: usize, high: usize, date_key: u32) -> usize {
     if high < low {
         return low;
     }
 
-    let mid = low + ((convert_date_to_days(date) - convert_date_to_days(&data[low].date)) * (high as u32 - low as u32) / (convert_date_to_days(&data[high].date) - convert_date_to_days(&data[low].date))) as usize;
+    let mid = low + ((date_key - convert_date_to_days(&data[low].date)) * (high as u32 - low as u32) / (convert_date_to_days(&data[high].date) - convert_date_to_days(&data[low].date))) as usize;
     let mid_days = convert_date_to_days(&data[mid].date);
 
-    if mid_days == convert_date_to_days(date) {
+    if mid_days == date_key {
         return mid;
-    } else if mid_days > convert_date_to_days(date) {
-        return interpolation_search(data, low, mid - 1, date);
+    } else if mid_days > date_key {
+        return interpolation_search(data, low, mid - 1, date_key);
     } else {
-        return interpolation_search(data, mid + 1, high, date);
+        return interpolation_search(data, mid + 1, high, date_key);
     }
 }
 
@@ -104,8 +104,8 @@ fn user_input() -> String {
 }
 
 fn in_range(data: &Vec<Data>, date: &str) -> bool {
-    let max_date = data.iter().map(|x| convert_date_to_days(&x.date)).max().unwrap();
-    let min_date = data.iter().map(|x| convert_date_to_days(&x.date)).min().unwrap();
+    let max_date = convert_date_to_days(data[data.len() - 1].date.as_str());
+    let min_date = convert_date_to_days(data[0].date.as_str());
 
     if convert_date_to_days(date) > max_date || convert_date_to_days(date) < min_date {
         return false;
@@ -143,8 +143,11 @@ fn main() {
         return;
     }
 
+    // Convert the input date to days for faster comparison later on
+    let date_key = convert_date_to_days(input.trim());
+
     let start = SystemTime::now();
-    let index = binary_search(&data, 0, data.len() - 1, input.trim()) as usize;
+    let index = binary_search(&data, 0, data.len() - 1, date_key) as usize;
     let end = SystemTime::now();
     println!("\nbinary search Done!");
     println!("Time elapsed: {:?}ns", end.duration_since(start).unwrap().as_nanos());
@@ -152,7 +155,7 @@ fn main() {
     print_data_line(&data, index);
 
     let start = SystemTime::now();
-    let index = interpolation_search(&data, 0, data.len() - 1, input.trim()) as usize;
+    let index = interpolation_search(&data, 0, data.len() - 1, date_key) as usize;
     let end = SystemTime::now();
     println!("\ninterpolation search Done!");
     println!("Time elapsed: {:?}ns", end.duration_since(start).unwrap().as_nanos());
