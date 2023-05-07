@@ -1,7 +1,8 @@
-#[allow(unused)]
+#![allow(unused_imports)]
 use std::fs::File;
-use std::io::Write;
+use std::io::{Write, BufRead, BufReader};
 use std::time::SystemTime;
+use std::path::Path;
 
 #[derive(Debug, Clone)]
 struct Data {
@@ -33,68 +34,58 @@ impl Data {
         }
     }
 }
- 
-fn counting_sort(data: &mut Vec<Data>) {
-    let max_value = data.iter().map(|d| d.value).max().unwrap() as usize;
 
+fn counting_sort(data: &mut Vec<Data>) {
     let min_value = data.iter().map(|d| d.value).min().unwrap() as usize;
+    let max_value = data.iter().map(|d| d.value).max().unwrap() as usize;
 
     let mut count_vec = vec![0; max_value - min_value + 1];
     data.iter().for_each(|d| count_vec[d.value as usize - min_value] += 1);
 
     let start = SystemTime::now();
-    // calculate cumulative values
-    for i in 1..count_vec.len() {
-        unsafe {
-            *count_vec.get_unchecked_mut(i) += *count_vec.get_unchecked(i - 1);
-        }
-    }
-    // 
+    let initial_value = count_vec[0];
+    count_vec.iter_mut().enumerate().skip(1).fold(initial_value, |prev, (_, value)| {
+        *value += prev;
+        *value
+    });
     println!("time to calculate cumulative values: {:?}ms", start.elapsed().unwrap().as_millis());
 
     let mut sorted_data = vec![Data::new(); data.len()];
     data.iter().rev().for_each(|d| {
-        sorted_data[count_vec[d.value as usize - min_value] - 1] = d.clone();
-        count_vec[d.value as usize - min_value] -= 1;
+        let index = d.value as usize - min_value;
+        sorted_data[count_vec[index] - 1] = d.clone();
+        count_vec[index] -= 1;
     });
 
     data.iter_mut().enumerate().for_each(|(i, d)| *d = sorted_data[i].clone());
 }
 
-fn merge(left_vec: &Vec<Data>, right_vec: &Vec<Data>) -> Vec<Data> {
-    let mut merged_vec = Vec::new();
-    let mut left_index = 0;
-    let mut right_index = 0;
-    while left_index < left_vec.len() && right_index < right_vec.len() {
-        let left_value = left_vec[left_index].value;
-        let right_value = right_vec[right_index].value;
-        if left_value < right_value {
-            merged_vec.push(left_vec[left_index].clone());
-            left_index += 1;
+fn merge(left_vec: &[Data], right_vec: &[Data]) -> Vec<Data> {
+    let mut merged_vec = Vec::with_capacity(left_vec.len() + right_vec.len());
+    let mut left_iter = left_vec.iter().peekable();
+    let mut right_iter = right_vec.iter().peekable();
+
+    while let (Some(left), Some(right)) = (left_iter.peek(), right_iter.peek()) {
+        if left.value < right.value {
+            merged_vec.push(left_iter.next().unwrap().clone());
         } else {
-            merged_vec.push(right_vec[right_index].clone());
-            right_index += 1;
+            merged_vec.push(right_iter.next().unwrap().clone());
         }
     }
-    while left_index < left_vec.len() {
-        merged_vec.push(left_vec[left_index].clone());
-        left_index += 1;
-    }
-    while right_index < right_vec.len() {
-        merged_vec.push(right_vec[right_index].clone());
-        right_index += 1;
-    }
-    return merged_vec;
+    merged_vec.extend(left_iter.cloned());
+    merged_vec.extend(right_iter.cloned());
+
+    merged_vec
 }
 
-fn merge_sort(data: &Vec<Data>) -> Vec<Data> {
+fn merge_sort(data: &[Data]) -> Vec<Data> {
     if data.len() <= 1 {
-        return data.clone();
+        return data.to_vec();
     }
     let mid = data.len() / 2;
-    let left_vec = merge_sort(&data[0..mid].to_vec());
-    let right_vec = merge_sort(&data[mid..].to_vec());
-    return merge(&left_vec, &right_vec);
+    let left_vec = merge_sort(&data[0..mid]);
+    let right_vec = merge_sort(&data[mid..]);
+    merge(&left_vec, &right_vec)
 }
 
 fn read_data(filename: &str) -> Vec<Data> {
@@ -132,6 +123,7 @@ fn read_data(filename: &str) -> Vec<Data> {
     return data;
 }
 
+#[allow(dead_code)]
 fn print_data(data: &Vec<Data>) {
     for d in data {
         println!("{} {} {} {} {} {} {} {} {} {}",
@@ -210,9 +202,9 @@ fn main() {
         },
         "2" => {
             let start = SystemTime::now();
-            let sorted_data = merge_sort(&data_vector);
+            merge_sort(&data_vector);
             let end = SystemTime::now();
-            print_data(&sorted_data);
+            // print_data(&sorted_data);
             println!("Merge sort took {} ms", end.duration_since(start).unwrap().as_millis());
         },
         _ => {
