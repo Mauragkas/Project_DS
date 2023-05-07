@@ -42,9 +42,15 @@ fn counting_sort(data: &mut Vec<Data>) {
     let mut count_vec = vec![0; max_value - min_value + 1];
     data.iter().for_each(|d| count_vec[d.value as usize - min_value] += 1);
 
+    let start = SystemTime::now();
+    // calculate cumulative values
     for i in 1..count_vec.len() {
-        count_vec[i] += count_vec[i - 1];
+        unsafe {
+            *count_vec.get_unchecked_mut(i) += *count_vec.get_unchecked(i - 1);
+        }
     }
+    // 
+    println!("time to calculate cumulative values: {:?}ms", start.elapsed().unwrap().as_millis());
 
     let mut sorted_data = vec![Data::new(); data.len()];
     data.iter().rev().for_each(|d| {
@@ -147,6 +153,7 @@ fn print_data(data: &Vec<Data>) {
     println!("--------------------------------");
 }
 
+#[allow(dead_code)]
 fn save_to_file(data: &Vec<Data>, filename: &str) {
     let mut file = File::create(filename).expect("Unable to create file");
     writeln!(file, "Direction,Year,Date,Weekday,Country,Commodity,Transport_Mode,Measure,Value,Cumulative").expect("Unable to write header");
@@ -195,10 +202,9 @@ fn main() {
     match choice.as_str() {
         "1" => {
             let start = SystemTime::now();
-            // let sorted_data = counting_sort(&data_vector);
             counting_sort(&mut data_vector);
             let end = SystemTime::now();
-            // print_data(&data_vector);
+            print_data(&data_vector);
             println!("Counting sort took {} ms", end.duration_since(start).unwrap().as_millis());
 
         },
