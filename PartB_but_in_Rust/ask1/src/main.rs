@@ -1,6 +1,7 @@
 #[allow(unused)]
 use std::fs::File;
 use std::io::Write;
+use std::process::exit;
 use std::time::SystemTime;
 
 #[derive(Debug, Clone)]
@@ -138,7 +139,8 @@ fn read_data(filename: &str) -> Option<Box<Node>> {
     let mut reader = match csv::Reader::from_path(filename) {
         Ok(reader) => reader,
         Err(_) => {
-            panic!("Error reading file");
+            println!("Error reading file");
+            exit(1);
         }
     };
     let mut root = None;
@@ -147,7 +149,8 @@ fn read_data(filename: &str) -> Option<Box<Node>> {
         let record = match result {
             Ok(record) => record,
             Err(_) => {
-                panic!("Error reading record");
+                println!("Error reading record");
+                exit(1);
             }
         };
         let data = Data {
