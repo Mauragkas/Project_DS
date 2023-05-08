@@ -2,6 +2,7 @@
 use std::fs::File;
 use std::io::Write;
 use std::process::exit;
+use std::time::SystemTime;
 
 #[derive(Debug, Clone)]
 struct Data {
@@ -22,28 +23,91 @@ struct Node {
     data: Data,
     left: Option<Box<Node>>,
     right: Option<Box<Node>>,
+    height: i32,
 }
 
-impl Node {
-    fn new(data: Data) -> Node {
-        Node {
-            data,
+#[derive(Debug)]
+struct AvlTree {
+    root: Option<Box<Node>>,
+}
+
+impl AvlTree {
+    fn new() -> AvlTree {
+        AvlTree { root: None }
+    }
+
+    fn insert(&mut self, data: &Data) {
+        insert(&mut self.root, data);
+    }
+
+}
+
+fn height(node: &Option<Box<Node>>) -> i32 {
+    match node {
+        Some(n) => n.height,
+        None => -1,
+    }
+}
+
+fn balance_factor(node: &Node) -> i32 {
+    height(&node.left) - height(&node.right)
+}
+
+fn update_height(node: &mut Box<Node>) {
+    node.height = 1 + std::cmp::max(height(&node.left), height(&node.right));
+}
+
+fn rotate_left(mut node: Box<Node>) -> Box<Node> {
+    let mut new_root = node.right.take().unwrap();
+    node.right = new_root.left.take();
+    update_height(&mut node);
+    update_height(&mut new_root);
+    new_root.left = Some(node);
+    new_root
+}
+
+fn rotate_right(mut node: Box<Node>) -> Box<Node> {
+    let mut new_root = node.left.take().unwrap();
+    node.left = new_root.right.take();
+    update_height(&mut node);
+    update_height(&mut new_root);
+    new_root.right = Some(node);
+    new_root
+}
+
+fn balance(mut node: Box<Node>) -> Box<Node> {
+    update_height(&mut node);
+    if balance_factor(&node) > 1 {
+        if balance_factor(&node.left.as_ref().unwrap()) < 0 {
+            node.left = Some(rotate_left(node.left.unwrap()));
+        }
+        return rotate_right(node);
+    }
+    if balance_factor(&node) < -1 {
+        if balance_factor(&node.right.as_ref().unwrap()) > 0 {
+            node.right = Some(rotate_right(node.right.unwrap()));
+        }
+        return rotate_left(node);
+    }
+    node
+}
+
+fn insert(root: &mut Option<Box<Node>>, data: &Data) {
+    if root.is_none() {
+        *root = Some(Box::new(Node {
+            data: data.clone(),
             left: None,
             right: None,
-        }
+            height: 0,
+        }));
+        return;
     }
-}
-
-fn insert(root: &mut Option<Box<Node>>, data: &Data) -> () {
-    if let Some(ref mut node) = root {
-        if &data.value < &node.data.value {
-            insert(&mut node.left, data);
-        } else {
-            insert(&mut node.right, data);
-        }
+    if data.value < root.as_ref().unwrap().data.value {
+        insert(&mut root.as_mut().unwrap().left, data);
     } else {
-        *root = Some(Box::new(Node::new(data.clone())));
+        insert(&mut root.as_mut().unwrap().right, data);
     }
+    *root = Some(balance(root.take().unwrap()));
 }
 
 fn node_with_min_value(root: &Option<Box<Node>>) -> Option<Box<Node>> {
@@ -62,7 +126,6 @@ fn node_with_max_value(root: &Option<Box<Node>>) -> Option<Box<Node>> {
     return Some(current.clone());
 }
 
-// fn to store nodes in a vector with the same value
 fn nodes_with_same_value<'a>(root: &'a Option<Box<Node>>, value: &u64, nodes: &mut Vec<&'a Node>) {
     if let Some(ref node) = *root {
         if &node.data.value == value {
@@ -73,7 +136,7 @@ fn nodes_with_same_value<'a>(root: &'a Option<Box<Node>>, value: &u64, nodes: &m
     }
 }
 
-fn read_data(filename: &str) -> Option<Box<Node>> {
+fn read_data(filename: &str) -> Option<AvlTree> {
     let mut reader = match csv::Reader::from_path(filename) {
         Ok(reader) => reader,
         Err(_) => {
@@ -81,7 +144,7 @@ fn read_data(filename: &str) -> Option<Box<Node>> {
             exit(1);
         }
     };
-    let mut root = None;
+    let mut tree = AvlTree::new();
 
     for result in reader.records() {
         let record = match result {
@@ -104,10 +167,10 @@ fn read_data(filename: &str) -> Option<Box<Node>> {
             cumulative: record.get(9).unwrap().parse::<u64>().unwrap(),
         };
 
-        insert(&mut root, &data);
+        tree.insert(&data);
     }
 
-    return root;
+    return Some(tree);
 }
 
 fn user_input() -> String {
@@ -148,12 +211,11 @@ fn main() {
 
         match choice.as_str() {
             "1" => {
-                let node = node_with_max_value(&root);
+                let node = node_with_max_value(&root.as_ref().unwrap().root);
                 match node {
                     Some(node) => {
-                        // print_data(&node.data);
                         let mut nodes = Vec::new();
-                        nodes_with_same_value(&root, &node.data.value, &mut nodes);
+                        nodes_with_same_value(&root.as_ref().unwrap().root, &node.data.value, &mut nodes);
                         let mut i = 0;
                         for node in nodes {
                             if i < 10 {
@@ -168,14 +230,17 @@ fn main() {
                 }
             }
             "2" => {
-                let node = node_with_min_value(&root);
+                let node = node_with_min_value(&root.as_ref().unwrap().root);
                 match node {
                     Some(node) => {
-                        // print_data(&node.data);
                         let mut nodes = Vec::new();
-                        nodes_with_same_value(&root, &node.data.value, &mut nodes);
+                        nodes_with_same_value(&root.as_ref().unwrap().root, &node.data.value, &mut nodes);
+                        let mut i = 0;
                         for node in nodes {
-                            print_data(&node.data);
+                            if i < 10 {
+                                print_data(&node.data);
+                                i += 1;
+                            }
                         }
                     }
                     None => {
@@ -190,6 +255,7 @@ fn main() {
                 println!("Invalid choice");
             }
         }
+        println!()
     }
 
     println!("Bye!");
