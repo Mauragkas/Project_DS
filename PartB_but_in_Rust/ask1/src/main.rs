@@ -237,6 +237,7 @@ fn read_data(filename: &str) -> Option<AvlTree> {
             cumulative: record.get(9).unwrap().parse::<u64>().unwrap(),
         };
 
+        // println!("{}", data.date);
         tree.insert(&data);
     }
 
