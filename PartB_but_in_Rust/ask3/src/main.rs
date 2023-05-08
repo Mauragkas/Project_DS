@@ -2,6 +2,7 @@
 use std::fs::File;
 use std::io::Write;
 use std::process::exit;
+use std::time::SystemTime;
 
 const MOD: usize = 11;
 
@@ -34,127 +35,138 @@ impl Node {
     }
 }
 
-fn init() -> Vec<Option<Box<Node>>> {
-    return vec![None; MOD];
+#[derive(Debug, Clone)]
+struct LinkedList {
+    first: Option<Box<Node>>,
+    last: Option<*mut Node>,
 }
 
-fn hashing(str: &str) -> usize {
+impl LinkedList {
+    fn new() -> LinkedList {
+        LinkedList {
+            first: None,
+            last: None,
+        }
+    }
+
+    fn push_back(&mut self, data: Data) {
+        let mut new_node = Box::new(Node::new(data));
+        new_node.next = None;
+
+        match self.last {
+            None => {
+                // The list is empty
+                self.first = Some(new_node);
+                self.last = Some(self.first.as_mut().unwrap().as_mut() as *mut Node);
+            }
+            Some(last) => {
+                // The list is not empty
+                unsafe {
+                    (*last).next = Some(new_node);
+                    self.last = Some((*last).next.as_mut().unwrap().as_mut() as *mut Node);
+                }
+            }
+        }
+    }
+}
+
+fn init() -> Vec<LinkedList> {
+    let mut hash_table = Vec::new();
+    for _ in 0..MOD {
+        hash_table.push(LinkedList::new());
+    }
+    hash_table
+}
+
+fn hash(date: &str) -> usize {
     let mut sum = 0;
-    for c in str.chars() {
+    for c in date.chars() {
         sum += c as usize;
     }
-    return sum % MOD;
+    sum % MOD
 }
 
-fn insert(v: &mut Vec<Option<Box<Node>>>, data: Data) -> () {
-    let index = hashing(&data.date);
-    let node = Node::new(data);
-    match v[index] {
-        None => {
-            v[index] = Some(Box::new(node));
-        },
-        Some(ref mut head) => {
-            let mut current = head;
-            while let Some(ref mut next) = current.next {
-                current = next;
-            }
-            current.next = Some(Box::new(node));
+fn insert(hash_table: &mut Vec<LinkedList>, data: Data) {
+    let index = hash(&data.date);
+    hash_table[index].push_back(data);
+}
+
+fn search(hash_table: &Vec<LinkedList>, date: &str) -> Option<Box<Node>> {
+    let index = hash(date);
+    let mut current = hash_table[index].first.clone();
+    while let Some(node) = current {
+        if node.data.date == date {
+            return Some(node);
         }
+        current = node.next;
+    }
+    None
+}
+
+fn edit(hash_table: &mut Vec<LinkedList>, date: &str, data: Data) {
+    let index = hash(date);
+    let mut current = hash_table[index].first.as_mut();
+
+    while let Some(node) = current {
+        if node.data.date == date {
+            node.data = data;
+            return;
+        }
+        current = node.next.as_mut();
     }
 }
 
-fn search(v: &Vec<Option<Box<Node>>>, date: &str) -> Option<Box<Node>> {
-    let index = hashing(date);
-    match &v[index] {
-        None => {
-            // println!("No data for this date");
-            return None;
-        },
-        Some(head) => {
-            let mut current = head;
-            while let Some(next) = &current.next {
-                if &next.data.date == date {
-                    return Some(next.clone());
-                }
-                current = next;
-            }
-            return None;
-        }
-    }
-}
-
-fn edit(v: &mut Vec<Option<Box<Node>>>, date: &str, data: Data) -> () {
-    let index = hashing(date);
-    match &mut v[index] {
-        None => {
-            println!("No data for this date");
-        },
-        Some(head) => {
-            let mut current = head;
-            while let Some(next) = &mut current.next {
-                if &next.data.date == date {
-                    next.data = data;
-                    return;
-                }
-                current = next;
-            }
-        }
-    }
-}
-
-fn delete_and_attach_next(head: Option<Box<Node>>) -> Option<Box<Node>> {
-    if let Some(mut curr) = head {
-        if let Some(mut next) = curr.next.take() {
-            curr.next = next.next.take();
-            next.next = Some(curr);
-            Some(next)
-        } else {
-            Some(curr)
-        }
+fn delete_and_attach_next(node: Option<Box<Node>>) -> Option<Box<Node>> {
+    if let Some(mut n) = node {
+        n.next.take()
     } else {
         None
     }
 }
 
-fn delete(v: &mut Vec<Option<Box<Node>>>, date: &str) -> Vec<Option<Box<Node>>> {
-    let index = hashing(date);
-    
+fn delete(v: &mut Vec<LinkedList>, date: &str) {
+    let index = hash(date);
+
     // if the key is not in the vector, return the vector as it is
-    if v[index].is_none() {
-        return v.clone();
+    if v[index].first.is_none() {
+        return;
     } else {
         // if the key is the first node in the linked list
-        if v[index].as_ref().unwrap().data.date == date {
-            let mut head = v[index].take();
-            let mut next = head.as_mut().unwrap().next.take();
+        if v[index].first.as_ref().unwrap().data.date == date {
+            let mut head = v[index].first.take();
+            let mut next = head.as_mut().and_then(|n| n.next.take());
             head = delete_and_attach_next(head);
-            v[index] = head;
+            v[index].first = head;
             while let Some(mut curr) = next {
                 next = curr.next.take();
-                curr = delete_and_attach_next(Some(curr)).unwrap();
-                insert(v, curr.data);
+                if let Some(mut new_curr) = delete_and_attach_next(Some(curr)) {
+                    insert(v, new_curr.data);
+                    next = new_curr.next.take();
+                }
             }
         } else {
-            let mut head = v[index].take();
-            let mut next = head.as_mut().unwrap().next.take();
+            let mut head = v[index].first.take();
+            let mut next = head.as_mut().and_then(|n| n.next.take());
             while let Some(mut curr) = next {
                 if curr.data.date == date {
                     next = curr.next.take();
-                    curr = delete_and_attach_next(Some(curr)).unwrap();
-                    insert(v, curr.data);
+                    if let Some(mut new_curr) = delete_and_attach_next(Some(curr)) {
+                        insert(v, new_curr.data);
+                        next = new_curr.next.take();
+                    }
                 } else {
                     next = curr.next.take();
-                    curr = delete_and_attach_next(Some(curr)).unwrap();
-                    insert(v, curr.data);
+                    if let Some(mut new_curr) = delete_and_attach_next(Some(curr)) {
+                        insert(v, new_curr.data);
+                        next = new_curr.next.take();
+                    }
                 }
             }
         }
-
-        return v.clone();
     }
 }
 
-fn read_data(filename: &str) -> Vec<Option<Box<Node>>> {
+fn read_data(filename: &str) -> Vec<LinkedList> {
     let mut reader = match csv::Reader::from_path(filename) {
         Ok(reader) => reader,
         Err(_) => {
@@ -216,9 +228,24 @@ fn print_data(data: &Data) {
     );
 }
 
+// fn to print the vector of linked list
+#[allow(dead_code)]
+fn print_vec(vec: &Vec<LinkedList>) {
+    for (i, list) in vec.iter().enumerate() {
+        println!("{}: ", i);
+        let mut current = list.first.clone();
+        while let Some(node) = current {
+            print_data(&node.data);
+            current = node.next;
+        }
+    }
+}
+
 fn main() {
+    let start = SystemTime::now();
     let mut vec = read_data("effects.csv");
-    
+    println!("Time elapsed: {:?}", start.elapsed().unwrap());
+
     loop {
         println!("---------------------------");
         println!("1. Search");
@@ -238,12 +265,12 @@ fn main() {
                 let node = match search(&vec, &date) {
                     Some(node) => node,
                     None => {
-                        println!("No data for this date");
+                        println!("No data found");
                         continue;
                     }
                 };
                 print_data(&node.data);
-            },
+            }
             "2" => {
                 print!("Enter date: ");
                 std::io::stdout().flush().unwrap();
@@ -251,7 +278,7 @@ fn main() {
                 let node = match search(&vec, &date) {
                     Some(node) => node,
                     None => {
-                        println!("No data for this date");
+                        println!("No data found");
                         continue;
                     }
                 };
@@ -261,19 +288,21 @@ fn main() {
                 let mut data = node.data;
                 data.value = value.parse::<u64>().unwrap();
                 edit(&mut vec, &date, data);
-            },
+            }
             "3" => {
                 print!("Enter date: ");
                 std::io::stdout().flush().unwrap();
                 let date = user_input();
-                vec = delete(&mut vec, &date);
-            },
+                delete(&mut vec, &date);
+            }
             "0" => {
                 break;
-            },
+            }
             _ => {
                 println!("Invalid choice");
             }
         }
+
+        // print_vec(&vec);
     }
 }
