@@ -197,7 +197,9 @@ fn print_data(data: &Data) {
 }
 
 fn main() {
+    let start = SystemTime::now();
     let root = read_data("effects.csv");
+    println!("Time elapsed: {:?}", start.elapsed().unwrap());
     
     loop {
         println!("---------------------------");
@@ -216,13 +218,9 @@ fn main() {
                     Some(node) => {
                         let mut nodes = Vec::new();
                         nodes_with_same_value(&root.as_ref().unwrap().root, &node.data.value, &mut nodes);
-                        let mut i = 0;
-                        for node in nodes {
-                            if i < 10 {
-                                print_data(&node.data);
-                                i += 1;
-                            }
-                        }
+                        nodes.into_iter().take(10).for_each(|node| {
+                            print_data(&node.data);
+                        });
                     }
                     None => {
                         println!("No data found");
@@ -235,13 +233,9 @@ fn main() {
                     Some(node) => {
                         let mut nodes = Vec::new();
                         nodes_with_same_value(&root.as_ref().unwrap().root, &node.data.value, &mut nodes);
-                        let mut i = 0;
-                        for node in nodes {
-                            if i < 10 {
-                                print_data(&node.data);
-                                i += 1;
-                            }
-                        }
+                        nodes.into_iter().take(10).for_each(|node| {
+                            print_data(&node.data);
+                        });
                     }
                     None => {
                         println!("No data found");
