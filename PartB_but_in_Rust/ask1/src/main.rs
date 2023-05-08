@@ -271,7 +271,7 @@ fn main() {
     let mut root = read_data("effects.csv");
     let stop = SystemTime::now();
 
-    println!("Time taken to read data: {}s", stop.duration_since(start).unwrap().as_secs());
+    println!("Time taken to read data: {}ms", stop.duration_since(start).unwrap().as_millis());
 
     loop {
         println!("---------------------------");
@@ -291,7 +291,7 @@ fn main() {
                 print!("Enter date: ");
                 std::io::stdout().flush().unwrap();
                 let date = user_input();
-                
+
                 if let Some(node) = root.as_ref().unwrap().search(&date) {
                     let node_data = &node.data;
                     print_data(&node_data);
