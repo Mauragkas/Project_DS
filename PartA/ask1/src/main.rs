@@ -3,6 +3,9 @@ use std::fs::File;
 use std::io::{Write, BufRead, BufReader};
 use std::time::SystemTime;
 use std::path::Path;
+use tokio::sync::Mutex;
+use std::sync::Arc;
+use std::cmp;
 
 #[derive(Debug, Clone)]
 struct Data {
@@ -35,29 +38,46 @@ impl Data {
     }
 }
 
-fn counting_sort(data: &mut Vec<Data>) {
+async fn counting_sort(data: &mut Vec<Data>) {
+    /*
+    by using concurent programming, we can make the counting sort faster by about 33% (~6s to ~4s)
+    but it is still slower than merge sort 
+    */
     let min_value = data.iter().map(|d| d.value).min().unwrap() as usize;
     let max_value = data.iter().map(|d| d.value).max().unwrap() as usize;
 
-    let mut count_vec = vec![0; max_value - min_value + 1];
-    data.iter().for_each(|d| count_vec[d.value as usize - min_value] += 1);
+    let count_vec = Arc::new(Mutex::new(vec![0; max_value - min_value + 1]));
+
+    let mut handles = vec![];
+    for d in data.iter() {
+        let count_vec = Arc::clone(&count_vec);
+        let value = d.value as usize - min_value;
+        let handle = tokio::spawn(async move {
+            let mut count_vec = count_vec.lock().await;
+            count_vec[value] += 1;
+        });
+        handles.push(handle);
+    }
+    for handle in handles {
+        handle.await.unwrap();
+    }
 
     let start = SystemTime::now();
-    let initial_value = count_vec[0];
-    count_vec.iter_mut().enumerate().skip(1).fold(initial_value, |prev, (_, value)| {
-        *value += prev;
-        *value
-    });
+    let mut count_vec = count_vec.lock().await;
+    let mut sum = 0;
+    for i in count_vec.iter_mut() {
+        *i += sum;
+        sum = *i;
+    }
     println!("time to calculate cumulative values: {:?}ms", start.elapsed().unwrap().as_millis());
 
     let mut sorted_data = vec![Data::new(); data.len()];
-    data.iter().rev().for_each(|d| {
+    for d in data.iter().rev() {
         let index = d.value as usize - min_value;
         sorted_data[count_vec[index] - 1] = d.clone();
         count_vec[index] -= 1;
-    });
-
-    data.iter_mut().enumerate().for_each(|(i, d)| *d = sorted_data[i].clone());
+    }
+    data.clone_from(&sorted_data);
 }
 
 fn merge(left_vec: &[Data], right_vec: &[Data]) -> Vec<Data> {
@@ -180,7 +200,8 @@ fn user_input() -> String {
     input
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let mut data_vector = read_data("effects.csv");
     
     println!("Select sorting algorithm:");
@@ -194,17 +215,18 @@ fn main() {
     match choice.as_str() {
         "1" => {
             let start = SystemTime::now();
-            counting_sort(&mut data_vector);
+            counting_sort(&mut data_vector).await;
             let end = SystemTime::now();
             print_data(&data_vector);
             println!("Counting sort took {} ms", end.duration_since(start).unwrap().as_millis());
+            // println!("Counting sort took {} ns", end.duration_since(start).unwrap().as_nanos());
 
         },
         "2" => {
             let start = SystemTime::now();
-            merge_sort(&data_vector);
+            let sorted_data = merge_sort(&data_vector);
             let end = SystemTime::now();
-            // print_data(&sorted_data);
+            print_data(&sorted_data);
             println!("Merge sort took {} ms", end.duration_since(start).unwrap().as_millis());
         },
         _ => {
