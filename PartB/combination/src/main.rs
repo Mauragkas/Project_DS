@@ -39,5 +39,6 @@ fn main() {
                 println!("Invalid choice");
             }
         }
+        println!("bye bye");
     }
 }
