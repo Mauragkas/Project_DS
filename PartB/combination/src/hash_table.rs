@@ -252,7 +252,7 @@ pub fn hash_table_interface(filename: &str) {
         println!("2. Edit");
         println!("3. Delete");
         println!("4. Print All");
-        println!("0. Exit");
+        println!("0. Back");
         print!("Enter your choice: ");
         std::io::stdout().flush().unwrap();
 

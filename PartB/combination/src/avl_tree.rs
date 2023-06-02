@@ -308,7 +308,7 @@ pub fn avl_tree_interface(filename: &str) {
         println!("4. Delete");
         println!("5. Find the data with the MAX value");
         println!("6. Find the data with the MIN value");
-        println!("0. Exit");
+        println!("0. Back");
         print!("Enter your choice: ");
         std::io::stdout().flush().unwrap();
 
