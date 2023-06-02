@@ -38,11 +38,11 @@ impl Data {
     }
 }
 
+/*
+by using concurent programming, we can make the counting sort faster by about 33% (~6s to ~4s)
+but it is still slower than merge sort 
+*/
 async fn counting_sort(data: &mut Vec<Data>) {
-    /*
-    by using concurent programming, we can make the counting sort faster by about 33% (~6s to ~4s)
-    but it is still slower than merge sort 
-    */
     let min_value = data.iter().map(|d| d.value).min().unwrap() as usize;
     let max_value = data.iter().map(|d| d.value).max().unwrap() as usize;
 
@@ -77,7 +77,7 @@ async fn counting_sort(data: &mut Vec<Data>) {
         sorted_data[count_vec[index] - 1] = d.clone();
         count_vec[index] -= 1;
     }
-    data.clone_from(&sorted_data);
+    *data = sorted_data;
 }
 
 fn merge(left_vec: &[Data], right_vec: &[Data]) -> Vec<Data> {
