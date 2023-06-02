@@ -5,6 +5,7 @@ use crate::avl_tree::*;
 use crate::hash_table::*;
 use std::io::Write;
 
+const FILE: &str = "effects.csv";
 
 fn user_input() -> String {
     let mut input = String::new();
@@ -13,8 +14,6 @@ fn user_input() -> String {
     input
 }
 fn main() {
-    let filename = "effects.csv";
-
     loop {
         println!("---------------------------");
         println!("1. AVL Tree");
@@ -27,10 +26,10 @@ fn main() {
 
         match choice.as_str() {
             "1" => {
-                avl_tree_interface(filename);
+                avl_tree_interface(FILE);
             }
             "2" => {
-                hash_table_interface(filename);
+                hash_table_interface(FILE);
             }
             "0" => {
                 break;
