@@ -45,7 +45,7 @@ impl AvlTree {
 fn height(node: &Option<Box<Node>>) -> i32 {
     match node {
         Some(n) => n.height,
-        None => -1,
+        None => 0,
     }
 }
 
@@ -54,7 +54,9 @@ fn balance_factor(node: &Node) -> i32 {
 }
 
 fn update_height(node: &mut Box<Node>) {
-    node.height = 1 + std::cmp::max(height(&node.left), height(&node.right));
+    let hl = height(&node.left);
+    let hr = height(&node.right);
+    node.height = std::cmp::max(hl, hr) + 1;
 }
 
 fn rotate_left(mut node: Box<Node>) -> Box<Node> {
@@ -106,6 +108,7 @@ fn insert(root: &mut Option<Box<Node>>, data: Rc<Data>) -> Option<Box<Node>> {
     } else {
         root.as_mut().unwrap().right = insert(&mut root.as_mut().unwrap().right, data.clone());
     }
+    update_height(root.as_mut().unwrap());
     Some(balance(root.take().unwrap()))
 }
 
