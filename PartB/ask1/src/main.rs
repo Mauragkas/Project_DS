@@ -175,9 +175,9 @@ fn delete_node(root: &mut Option<Box<Node>>, date_str: &str) {
             while min_node.left.is_some() {
                 min_node = min_node.left.as_mut().unwrap();
             }
-            let min_data = min_node.clone();
-            delete_node(&mut root.as_mut().unwrap().right, &min_data.data.date);
-            root.as_mut().unwrap().data = min_data.data;
+            let min_data = min_node.data.clone();
+            delete_node(&mut root.as_mut().unwrap().right, &min_data.date);
+            root.as_mut().unwrap().data = min_data;
         }
     }
     if root.is_some() {
@@ -196,7 +196,14 @@ fn edit_node(root: &mut Option<Box<Node>>, date_str: &str) {
         print!("Enter the new Value: ");
         std::io::stdout().flush().unwrap();
         let value = user_input();
-        date_str_node.data.value = value.parse::<u64>().unwrap();
+        let new_value = match value.parse::<u64>() {
+            Ok(v) => v,
+            Err(_) => {
+                println!("Invalid value.");
+                return;
+            }
+        };
+        date_str_node.data.value = new_value;
 
         // Now we need to delete the original node and insert the updated node
         delete_node(root, date_str);

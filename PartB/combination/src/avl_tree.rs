@@ -175,9 +175,9 @@ fn delete_node(root: &mut Option<Box<Node>>, date_str: &str) {
             while min_node.left.is_some() {
                 min_node = min_node.left.as_mut().unwrap();
             }
-            let min_data = min_node.clone();
-            delete_node(&mut root.as_mut().unwrap().right, &min_data.data.date);
-            root.as_mut().unwrap().data = min_data.data;
+            let min_data = min_node.data.clone();
+            delete_node(&mut root.as_mut().unwrap().right, &min_data.date);
+            root.as_mut().unwrap().data = min_data;
         }
     }
     if root.is_some() {
@@ -196,7 +196,14 @@ fn edit_node(root: &mut Option<Box<Node>>, date_str: &str) {
         print!("Enter the new Value: ");
         std::io::stdout().flush().unwrap();
         let value = user_input();
-        date_str_node.data.value = value.parse::<u64>().unwrap();
+        let new_value = match value.parse::<u64>() {
+            Ok(v) => v,
+            Err(_) => {
+                println!("Invalid value.");
+                return;
+            }
+        };
+        date_str_node.data.value = new_value;
 
         // Now we need to delete the original node and insert the updated node
         delete_node(root, date_str);
@@ -244,20 +251,54 @@ fn read_data(filename: &str) -> Option<AvlTree> {
     return Some(tree);
 }
 
-fn node_with_min_value(root: &Option<Box<Node>>) -> Option<Box<Node>> {
-    let mut current = root.as_ref().unwrap();
-    while let Some(node) = &current.left {
-        current = node;
+fn find_min_value_node(root: &Option<Box<Node>>) -> Option<&Box<Node>> {
+    match root {
+        Some(node) => {
+            let left_min = find_min_value_node(&node.left);
+            let right_min = find_min_value_node(&node.right);
+
+            let mut min_node = node;
+            if let Some(l_node) = left_min {
+                if l_node.data.value < min_node.data.value {
+                    min_node = l_node;
+                }
+            }
+
+            if let Some(r_node) = right_min {
+                if r_node.data.value < min_node.data.value {
+                    min_node = r_node;
+                }
+            }
+
+            Some(min_node)
+        },
+        None => None,
     }
-    return Some(current.clone());
 }
 
-fn node_with_max_value(root: &Option<Box<Node>>) -> Option<Box<Node>> {
-    let mut current = root.as_ref().unwrap();
-    while let Some(node) = &current.right {
-        current = node;
+fn find_max_value_node(root: &Option<Box<Node>>) -> Option<&Box<Node>> {
+    match root {
+        Some(node) => {
+            let left_max = find_max_value_node(&node.left);
+            let right_max = find_max_value_node(&node.right);
+
+            let mut max_node = node;
+            if let Some(l_node) = left_max {
+                if l_node.data.value > max_node.data.value {
+                    max_node = l_node;
+                }
+            }
+
+            if let Some(r_node) = right_max {
+                if r_node.data.value > max_node.data.value {
+                    max_node = r_node;
+                }
+            }
+
+            Some(max_node)
+        },
+        None => None,
     }
-    return Some(current.clone());
 }
 
 fn nodes_with_same_value<'a>(root: &'a Option<Box<Node>>, value: &u64, nodes: &mut Vec<&'a Node>) {
@@ -345,7 +386,7 @@ pub fn avl_tree_interface(filename: &str) {
                 println!("Data deleted");
             }
             "5" => {
-                let node = node_with_max_value(&root.as_ref().unwrap().root);
+                let node = find_max_value_node(&root.as_ref().unwrap().root);
                 match node {
                     Some(node) => {
                         let mut nodes = Vec::new();
@@ -360,7 +401,7 @@ pub fn avl_tree_interface(filename: &str) {
                 }
             }
             "6" => {
-                let node = node_with_min_value(&root.as_ref().unwrap().root);
+                let node = find_min_value_node(&root.as_ref().unwrap().root);
                 match node {
                     Some(node) => {
                         let mut nodes = Vec::new();

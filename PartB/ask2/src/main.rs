@@ -3,6 +3,7 @@ use std::fs::File;
 use std::io::Write;
 use std::process::exit;
 use std::time::SystemTime;
+use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 struct Data {
@@ -20,7 +21,7 @@ struct Data {
 
 #[derive(Debug, Clone)]
 struct Node {
-    data: Data,
+    data: Rc<Data>,
     left: Option<Box<Node>>,
     right: Option<Box<Node>>,
     height: i32,
@@ -36,10 +37,9 @@ impl AvlTree {
         AvlTree { root: None }
     }
 
-    fn insert(&mut self, data: &Data) {
-        insert(&mut self.root, data);
+    fn insert(&mut self, data: Rc<Data>) {
+        self.root = insert(&mut self.root, data);
     }
-
 }
 
 fn height(node: &Option<Box<Node>>) -> i32 {
@@ -92,23 +92,23 @@ fn balance(mut node: Box<Node>) -> Box<Node> {
     node
 }
 
-fn insert(root: &mut Option<Box<Node>>, data: &Data) {
+fn insert(root: &mut Option<Box<Node>>, data: Rc<Data>) -> Option<Box<Node>> {
     if root.is_none() {
-        *root = Some(Box::new(Node {
+        return Some(Box::new(Node {
             data: data.clone(),
             left: None,
             right: None,
             height: 0,
         }));
-        return;
     }
     if data.value < root.as_ref().unwrap().data.value {
-        insert(&mut root.as_mut().unwrap().left, data);
+        root.as_mut().unwrap().left = insert(&mut root.as_mut().unwrap().left, data.clone());
     } else {
-        insert(&mut root.as_mut().unwrap().right, data);
+        root.as_mut().unwrap().right = insert(&mut root.as_mut().unwrap().right, data.clone());
     }
-    *root = Some(balance(root.take().unwrap()));
+    Some(balance(root.take().unwrap()))
 }
+
 
 fn node_with_min_value(root: &Option<Box<Node>>) -> Option<Box<Node>> {
     let mut current = root.as_ref().unwrap();
@@ -154,7 +154,7 @@ fn read_data(filename: &str) -> Option<AvlTree> {
                 exit(1);
             }
         };
-        let data = Data {
+        let data = Rc::new(Data {
             direction: record.get(0).unwrap().to_string(),
             year: record.get(1).unwrap().parse::<u16>().unwrap(),
             date: record.get(2).unwrap().to_string(),
@@ -165,9 +165,9 @@ fn read_data(filename: &str) -> Option<AvlTree> {
             measure: record.get(7).unwrap().to_string(),
             value: record.get(8).unwrap().parse::<u64>().unwrap(),
             cumulative: record.get(9).unwrap().parse::<u64>().unwrap(),
-        };
+        });
 
-        tree.insert(&data);
+        tree.insert(data);
     }
 
     return Some(tree);
