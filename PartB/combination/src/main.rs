@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#[allow(dead_code)]
 mod avl_tree;
 mod hash_table;
 use crate::avl_tree::*;

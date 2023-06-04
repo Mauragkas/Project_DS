@@ -116,53 +116,31 @@ fn edit(hash_table: &mut Vec<LinkedList>, date: &str, data: Data) {
     }
 }
 
-fn delete_and_attach_next(node: Option<Box<Node>>) -> Option<Box<Node>> {
-    if let Some(mut n) = node {
-        n.next.take()
-    } else {
-        None
-    }
-}
-
-fn delete(v: &mut Vec<LinkedList>, date: &str) {
+fn delete(hash_table: &mut Vec<LinkedList>, date: &str) {
     let index = hash(date);
+    let mut current = hash_table[index].first.as_mut();
 
-    // if the key is not in the vector, return the vector as it is
-    if v[index].first.is_none() {
+    // If the linked list at the hash index is empty, return.
+    if current.is_none() {
         return;
-    } else {
-        // if the key is the first node in the linked list
-        if v[index].first.as_ref().unwrap().data.date == date {
-            let mut head = v[index].first.take();
-            let mut next = head.as_mut().and_then(|n| n.next.take());
-            head = delete_and_attach_next(head);
-            v[index].first = head;
-            while let Some(mut curr) = next {
-                next = curr.next.take();
-                if let Some(mut new_curr) = delete_and_attach_next(Some(curr)) {
-                    insert(v, new_curr.data);
-                    next = new_curr.next.take();
-                }
-            }
-        } else {
-            let mut head = v[index].first.take();
-            let mut next = head.as_mut().and_then(|n| n.next.take());
-            while let Some(mut curr) = next {
-                if curr.data.date == date {
-                    next = curr.next.take();
-                    if let Some(mut new_curr) = delete_and_attach_next(Some(curr)) {
-                        insert(v, new_curr.data);
-                        next = new_curr.next.take();
-                    }
-                } else {
-                    next = curr.next.take();
-                    if let Some(mut new_curr) = delete_and_attach_next(Some(curr)) {
-                        insert(v, new_curr.data);
-                        next = new_curr.next.take();
-                    }
-                }
+    }
+
+    // If the date to be deleted is at the head of the linked list.
+    if current.as_ref().unwrap().data.date == date {
+        hash_table[index].first = current.take().unwrap().next.take();
+        return;
+    }
+
+    // Check the rest of the linked list.
+    while let Some(node) = current {
+        if let Some(next_node) = node.next.as_mut() {
+            if next_node.data.date == date {
+                // Node to be deleted is next_node.
+                node.next = next_node.next.take();
+                return;
             }
         }
+        current = node.next.as_mut();
     }
 }
 
