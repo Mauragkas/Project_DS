@@ -71,7 +71,7 @@ impl LinkedList {
 }
 
 fn init() -> Vec<LinkedList> {
-    let mut hash_table = Vec::new();
+    let mut hash_table = Vec::with_capacity(MOD);
     for _ in 0..MOD {
         hash_table.push(LinkedList::new());
     }
