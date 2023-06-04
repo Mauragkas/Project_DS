@@ -185,29 +185,26 @@ fn delete_node(root: &mut Option<Box<Node>>, date_str: &str) {
     }
 }
 
-fn edit_node(root: &mut Option<Box<Node>>, date_str: &str) {
-    if root.is_none() {
-        return;
-    }
-    if let Some(node) = search_node(root, date_str) {
-        // The date_str node is found, now we can update its data
-        let mut date_str_node = node.clone();
-
-        print!("Enter the new Value: ");
-        std::io::stdout().flush().unwrap();
-        let value = user_input();
-        let new_value = match value.parse::<u64>() {
-            Ok(v) => v,
-            Err(_) => {
-                println!("Invalid value.");
-                return;
-            }
-        };
-        date_str_node.data.value = new_value;
-
-        // Now we need to delete the original node and insert the updated node
-        delete_node(root, date_str);
-        insert(root, &date_str_node.data);
+fn edit_node(node: &mut Option<Box<Node>>, date_str: &str) {
+    if let Some(ref mut node_box) = node {
+        if node_box.data.date == date_str {
+            // The date_str node is found, now we can update its data
+            print!("Enter the new Value: ");
+            std::io::stdout().flush().unwrap();
+            let value = user_input();
+            let new_value = match value.parse::<u64>() {
+                Ok(v) => v,
+                Err(_) => {
+                    println!("Invalid value.");
+                    return;
+                }
+            };
+            node_box.data.value = new_value;
+        } else if date_to_days(date_str) < date_to_days(&node_box.data.date) {
+            edit_node(&mut node_box.left, date_str);
+        } else {
+            edit_node(&mut node_box.right, date_str);
+        }
     } else {
         println!("Date not found");
     }
