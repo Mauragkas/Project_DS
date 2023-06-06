@@ -1,4 +1,4 @@
-#[allow(unused)]
+#![allow(unused)]
 use std::fs::File;
 use std::io::Write;
 use std::process::exit;
@@ -58,13 +58,13 @@ impl AvlTree {
 
 }
 
-fn date_to_days(date_str: &str) -> u32 {
+fn date_to_days(date_str: &str) -> Option<u32> {
     let mut parts = date_str.split('/');
-    let day = parts.next().unwrap().parse::<u32>().unwrap();
-    let month = parts.next().unwrap().parse::<u32>().unwrap();
-    let year = parts.next().unwrap().parse::<u32>().unwrap();
+    let day = parts.next()?.parse::<u32>().ok()?;
+    let month = parts.next()?.parse::<u32>().ok()?;
+    let year = parts.next()?.parse::<u32>().ok()?;
     
-    year * 365 + month * 30 + day
+    Some(year * 365 + month * 30 + day)
 }
 
 fn height(node: &Option<Box<Node>>) -> i32 {
@@ -300,6 +300,11 @@ fn main() {
                 std::io::stdout().flush().unwrap();
                 let date = user_input();
 
+                if date_to_days(&date).is_none() {
+                    println!("Invalid date format");
+                    continue;
+                }
+
                 if let Some(node) = root.as_ref().unwrap().search(&date) {
                     let node_data = &node.data;
                     print_data(&node_data);
@@ -312,6 +317,11 @@ fn main() {
                 std::io::stdout().flush().unwrap();
                 let date = user_input();
                 
+                if date_to_days(&date).is_none() {
+                    println!("Invalid date format");
+                    continue;
+                }
+
                 root.as_mut().unwrap().edit(&date);
                 println!("Data updated");
             }            
@@ -319,6 +329,11 @@ fn main() {
                 print!("Enter date: ");
                 std::io::stdout().flush().unwrap();
                 let date = user_input();
+
+                if date_to_days(&date).is_none() {
+                    println!("Invalid date format");
+                    continue;
+                }
 
                 root.as_mut().unwrap().delete(&date);
                 println!("Data deleted");
