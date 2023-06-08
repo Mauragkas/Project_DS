@@ -46,6 +46,7 @@ async fn counting_sort(data: &mut Vec<Data>) {
     let min_value = data.iter().map(|d| d.value).min().unwrap() as usize;
     let max_value = data.iter().map(|d| d.value).max().unwrap() as usize;
 
+    // `Arc` and `Mutex` are used to safely share and mutate `count_vec` across multiple async tasks.
     let count_vec = Arc::new(Mutex::new(vec![0; max_value - min_value + 1]));
 
     let mut handles = vec![];
