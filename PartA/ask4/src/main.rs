@@ -1,9 +1,10 @@
-#[allow(unused)]
+#![allow(unused)]
 use std::fs::File;
 use std::io::{self, Write};
 use std::time::SystemTime;
 
-#[allow(unused)]
+mod tests;
+
 #[derive(Debug)]
 struct Data {
     direction: String,

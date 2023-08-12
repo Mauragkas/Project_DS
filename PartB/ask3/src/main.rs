@@ -6,6 +6,8 @@ use std::time::SystemTime;
 
 const MOD: usize = 11;
 
+mod tests;
+
 #[derive(Debug, Clone)]
 struct Data {
     direction: String,

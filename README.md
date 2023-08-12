@@ -81,3 +81,26 @@ cd .\Documents\Project\PartA\ask1\
 ```
 
 The cargo build and cargo run commands work the same way in Windows as they do in Unix environments.
+## Testing the Projects
+
+After building each project, it's recommended to run the provided tests to ensure that the project is functioning as expected.
+
+1. Navigate to the directory of the project you want to test. Using `ask1` as an example:
+
+    ```bash
+    cd Project/PartA/ask1
+    ```
+
+2. Run the tests using Cargo:
+
+    ```bash
+    cargo test
+    ```
+
+   This command will compile and run all the tests associated with the project. Cargo will display the results of each test, informing you whether they've passed or failed.
+
+3. If all tests pass, you can proceed with running the project as described in the earlier section. If some tests fail, it may indicate an issue with the code or the environment. Refer to the test output and project documentation for troubleshooting tips.
+
+Remember to run the tests for each project (`ask1`, `ask2`, and `ask3`) before executing them.
+
+---

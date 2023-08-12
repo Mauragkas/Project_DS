@@ -1,7 +1,9 @@
-#[allow(unused)]
+#![allow(unused)]
 use std::fs::File;
 use std::io::{self, Write};
 use std::time::SystemTime;
+
+mod tests;
 
 #[derive(Debug, Clone)]
 struct Data {

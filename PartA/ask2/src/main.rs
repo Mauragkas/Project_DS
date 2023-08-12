@@ -1,8 +1,11 @@
-#[allow(unused)]
+#![allow(unused)]
 use std::fs::File;
 use std::io::Write;
 use std::time::SystemTime;
 
+mod tests;
+
+#[derive(Debug, Clone)]
 struct Data {
     direction: String,
     year: u16,
@@ -14,6 +17,23 @@ struct Data {
     measure: String,
     value: u64,
     cumulative: u64,
+}
+
+impl Data {
+    fn new() -> Data {
+        Data {
+            direction: String::new(),
+            year: 0,
+            date: String::new(),
+            weekday: String::new(),
+            country: String::new(),
+            comodity: String::new(),
+            transport_mode: String::new(),
+            measure: String::new(),
+            value: 0,
+            cumulative: 0,
+        }
+    }
 }
 
 fn heapify(data: &mut [Data], n: usize, i: usize) {

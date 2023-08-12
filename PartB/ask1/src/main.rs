@@ -4,7 +4,9 @@ use std::io::Write;
 use std::process::exit;
 use std::time::SystemTime;
 
-#[derive(Debug, Clone)]
+mod tests;
+
+#[derive(Debug, Clone, PartialEq)]
 struct Data {
     direction: String,
     year: u16,
@@ -52,8 +54,8 @@ impl AvlTree {
         delete_node(&mut self.root, date_str);
     }
 
-    fn edit(&mut self, date_str: &str) {
-        edit_node(&mut self.root, date_str);
+    fn edit(&mut self, date_str: &str, value: u64) {
+        edit_node(&mut self.root, date_str, value);
     }
 
 }
@@ -188,28 +190,47 @@ fn delete_node(root: &mut Option<Box<Node>>, date_str: &str) {
     }
 }
 
-fn edit_node(node: &mut Option<Box<Node>>, date_str: &str) {
+fn edit_node(node: &mut Option<Box<Node>>, date_str: &str, value: u64) {
     if let Some(ref mut node_box) = node {
         if node_box.data.date == date_str {
-            // The date_str node is found, now we can update its data
-            print!("Enter the new Value: ");
-            std::io::stdout().flush().unwrap();
-            let value = user_input();
-            let new_value = match value.parse::<u64>() {
-                Ok(v) => v,
-                Err(_) => {
-                    println!("Invalid value.");
-                    return;
-                }
-            };
-            node_box.data.value = new_value;
+            node_box.data.value = value;
+            println!("Data updated");
         } else if date_to_days(date_str) < date_to_days(&node_box.data.date) {
-            edit_node(&mut node_box.left, date_str);
+            edit_node(&mut node_box.left, date_str, value);
         } else {
-            edit_node(&mut node_box.right, date_str);
+            edit_node(&mut node_box.right, date_str, value);
         }
     } else {
         println!("Date not found");
+    }
+}
+
+fn get_date(tree: &AvlTree) -> Result<String, String> {
+    print!("Enter date: ");
+    std::io::stdout().flush().unwrap();
+    let date = user_input();
+    
+    // Checking the date format first
+    if date_to_days(&date).is_none() {
+        return Err("Invalid date format".to_string());
+    }
+
+    // Searching the tree to see if the date is valid
+    if tree.search(&date).is_none() {
+        return Err("Date not found in the tree.".to_string());
+    }
+
+    Ok(date)
+}
+
+fn get_value() -> Result<u64, String> {
+    print!("Enter the new Value: ");
+    std::io::stdout().flush().unwrap();
+    let value_str = user_input();
+
+    match value_str.parse::<u64>() {
+        Ok(v) => Ok(v),
+        Err(_) => Err("Invalid value entered.".to_string()),
     }
 }
 
@@ -296,47 +317,42 @@ fn main() {
         match choice.as_str() {
             "1" => root.as_ref().unwrap().inorder(),
             "2" => {
-                print!("Enter date: ");
-                std::io::stdout().flush().unwrap();
-                let date = user_input();
-
-                if date_to_days(&date).is_none() {
-                    println!("Invalid date format");
-                    continue;
-                }
-
-                if let Some(node) = root.as_ref().unwrap().search(&date) {
-                    let node_data = &node.data;
-                    print_data(&node_data);
-                } else {
-                    println!("No data found");
+                match get_date(&root.as_ref().unwrap()) {
+                    Ok(date) => {
+                        if let Some(node) = root.as_ref().unwrap().search(&date) {
+                            let node_data = &node.data;
+                            print_data(&node_data);
+                        } else {
+                            println!("No data found");
+                        }
+                    },
+                    Err(e) => println!("{}", e),
                 }
             }
+        
             "3" => {
-                print!("Enter date: ");
-                std::io::stdout().flush().unwrap();
-                let date = user_input();
-                
-                if date_to_days(&date).is_none() {
-                    println!("Invalid date format");
-                    continue;
+                match get_date(&root.as_ref().unwrap()) {
+                    Ok(date) => {
+                        match get_value() {
+                            Ok(value) => {
+                                root.as_mut().unwrap().edit(&date, value);
+                                println!("Data updated");
+                            },
+                            Err(e) => println!("{}", e),
+                        }
+                    },
+                    Err(e) => println!("{}", e),
                 }
-
-                root.as_mut().unwrap().edit(&date);
-                println!("Data updated");
-            }            
+            }
+        
             "4" => {
-                print!("Enter date: ");
-                std::io::stdout().flush().unwrap();
-                let date = user_input();
-
-                if date_to_days(&date).is_none() {
-                    println!("Invalid date format");
-                    continue;
+                match get_date(&root.as_ref().unwrap()) {
+                    Ok(date) => {
+                        root.as_mut().unwrap().delete(&date);
+                        println!("Data deleted");
+                    },
+                    Err(e) => println!("{}", e),
                 }
-
-                root.as_mut().unwrap().delete(&date);
-                println!("Data deleted");
             }
             "0" => break,
             _ => println!("Invalid choice"),

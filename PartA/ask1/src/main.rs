@@ -7,6 +7,8 @@ use tokio::sync::Mutex;
 use std::sync::Arc;
 use std::cmp;
 
+mod tests;
+
 #[derive(Debug, Clone)]
 struct Data {
     direction: String,

@@ -5,6 +5,8 @@ use std::process::exit;
 use std::time::SystemTime;
 use std::rc::Rc;
 
+mod tests;
+
 #[derive(Debug, Clone)]
 struct Data {
     direction: String,
