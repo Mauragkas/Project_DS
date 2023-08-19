@@ -7,8 +7,8 @@ use crate::read_data;
 mod ask1 {
     use super::*;
 
-    #[tokio::test]
-    async fn test_counting_sort() {
+    #[test]
+    fn test_counting_sort() {
         let nums = vec![1, 4, 2, 0, 3];
         let mut data = vec![Data::new(); nums.len()];
         for (i, d) in data.iter_mut().enumerate() {

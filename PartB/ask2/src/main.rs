@@ -80,7 +80,6 @@ fn rotate_right(mut node: Box<Node>) -> Box<Node> {
 }
 
 fn balance(mut node: Box<Node>) -> Box<Node> {
-    update_height(&mut node);
     if balance_factor(&node) > 1 {
         if balance_factor(&node.left.as_ref().unwrap()) < 0 {
             node.left = Some(rotate_left(node.left.unwrap()));
@@ -93,13 +92,14 @@ fn balance(mut node: Box<Node>) -> Box<Node> {
         }
         return rotate_left(node);
     }
+    update_height(&mut node); // Moved here to avoid redundant height updates
     node
 }
 
 fn insert(root: &mut Option<Box<Node>>, data: Rc<Data>) -> Option<Box<Node>> {
     if root.is_none() {
         return Some(Box::new(Node {
-            data: data.clone(),
+            data: data, // No need to clone
             left: None,
             right: None,
             height: 0,
@@ -110,10 +110,8 @@ fn insert(root: &mut Option<Box<Node>>, data: Rc<Data>) -> Option<Box<Node>> {
     } else {
         root.as_mut().unwrap().right = insert(&mut root.as_mut().unwrap().right, data.clone());
     }
-    update_height(root.as_mut().unwrap());
     Some(balance(root.take().unwrap()))
 }
-
 
 fn node_with_min_value(root: &Option<Box<Node>>) -> Option<Box<Node>> {
     let mut current = root.as_ref().unwrap();
