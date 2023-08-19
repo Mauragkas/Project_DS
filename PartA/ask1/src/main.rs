@@ -1,4 +1,4 @@
-#![allow(unused_imports)]
+#![allow(unused)]
 use std::fs::File;
 use std::io::{Write, BufRead, BufReader};
 use std::time::SystemTime;
@@ -6,6 +6,10 @@ use std::path::Path;
 use tokio::sync::Mutex;
 use std::sync::Arc;
 use std::cmp;
+
+use csv::{ReaderBuilder, ByteRecord};
+
+use rayon::prelude::*;
 
 mod tests;
 
@@ -40,93 +44,96 @@ impl Data {
     }
 }
 
-/*
-by using concurent programming, we can make the counting sort faster by about 33% (~6s to ~4s)
-but it is still slower than merge sort 
-*/
-async fn counting_sort(data: &mut Vec<Data>) {
+fn counting_sort(data: &mut Vec<Data>) {
     let min_value = data.iter().map(|d| d.value).min().unwrap() as usize;
     let max_value = data.iter().map(|d| d.value).max().unwrap() as usize;
 
-    // `Arc` and `Mutex` are used to safely share and mutate `count_vec` across multiple async tasks.
-    let count_vec = Arc::new(Mutex::new(vec![0; max_value - min_value + 1]));
-
-    let mut handles = vec![];
+    let mut count_vec = vec![0; max_value - min_value + 1];
     for d in data.iter() {
-        let count_vec = Arc::clone(&count_vec);
         let value = d.value as usize - min_value;
-        let handle = tokio::spawn(async move {
-            let mut count_vec = count_vec.lock().await;
-            count_vec[value] += 1;
-        });
-        handles.push(handle);
-    }
-    for handle in handles {
-        handle.await.unwrap();
+        count_vec[value] += 1;
     }
 
-    let start = SystemTime::now();
-    let mut count_vec = count_vec.lock().await;
-    let mut sum = 0;
-    for i in count_vec.iter_mut() {
-        *i += sum;
-        sum = *i;
+    let mut total = 0;
+    for count in count_vec.iter_mut() {
+        let old_count = *count;
+        *count = total;
+        total += old_count;
     }
-    println!("time to calculate cumulative values: {:?}ms", start.elapsed().unwrap().as_millis());
 
     let mut sorted_data = vec![Data::new(); data.len()];
-    for d in data.iter().rev() {
-        let index = d.value as usize - min_value;
-        sorted_data[count_vec[index] - 1] = d.clone();
-        count_vec[index] -= 1;
+    for d in data.iter() {
+        let value = d.value as usize - min_value;
+        let index = count_vec[value];
+        sorted_data[index] = d.clone();
+        count_vec[value] += 1;
     }
+
     *data = sorted_data;
 }
 
-fn merge(left_vec: &[Data], right_vec: &[Data]) -> Vec<Data> {
-    let mut merged_vec = Vec::with_capacity(left_vec.len() + right_vec.len());
-    let mut left_iter = left_vec.iter().peekable();
-    let mut right_iter = right_vec.iter().peekable();
-
-    while let (Some(left), Some(right)) = (left_iter.peek(), right_iter.peek()) {
-        if left.value < right.value {
-            merged_vec.push(left_iter.next().unwrap().clone());
-        } else {
-            merged_vec.push(right_iter.next().unwrap().clone());
-        }
+fn merge_sort_par(data: &mut [Data]) {
+    if data.len() <= 1 {
+        return;
     }
-    merged_vec.extend(left_iter.cloned());
-    merged_vec.extend(right_iter.cloned());
 
-    merged_vec
+    let mid = data.len() / 2;
+    let (left, right) = data.split_at_mut(mid);
+
+    rayon::join(|| merge_sort_par(left), || merge_sort_par(right));
+    let mut left = left.to_vec();
+    let mut right = right.to_vec();
+    merge(&mut left, &mut right, data);
 }
 
-fn merge_sort(data: &[Data]) -> Vec<Data> {
-    if data.len() <= 1 {
-        return data.to_vec();
+fn merge(left: &mut [Data], right: &mut [Data], data: &mut [Data]) {
+    let mut left_index = 0;
+    let mut right_index = 0;
+
+    for i in 0..data.len() {
+        if left_index < left.len() && right_index < right.len() {
+            if left[left_index].value < right[right_index].value {
+                data[i] = left[left_index].clone();
+                left_index += 1;
+            } else {
+                data[i] = right[right_index].clone();
+                right_index += 1;
+            }
+        } else if left_index < left.len() {
+            data[i] = left[left_index].clone();
+            left_index += 1;
+        } else {
+            data[i] = right[right_index].clone();
+            right_index += 1;
+        }
     }
-    let mid = data.len() / 2;
-    let left_vec = merge_sort(&data[0..mid]);
-    let right_vec = merge_sort(&data[mid..]);
-    merge(&left_vec, &right_vec)
 }
 
 fn read_data(filename: &str) -> Vec<Data> {
-    let mut reader = csv::Reader::from_path(filename).unwrap();
-    let mut data = Vec::new();
+    let file = File::open(filename).expect("Unable to open file");
+    let mut rdr = ReaderBuilder::new()
+        .buffer_capacity(1 << 16) // Set buffer capacity to 64 KB
+        .has_headers(true) // Set this to false if your CSV doesn't have headers
+        .delimiter(b',') // Change this if your CSV uses a different delimiter
+        .quote(b'"') // Change this if your CSV uses a different quoting character
+        .escape(Some(b'\\')) // Change this if your CSV uses a different escape character
+        .double_quote(true) // Set this to false if your CSV doesn't use double quote escaping
+        .flexible(false) // Set this to true if your CSV has a variable number of fields per record
+        .from_reader(file);
+    let mut record = ByteRecord::new();
+    let mut data = Vec::with_capacity(111_438); // Preallocate memory based on an estimate
 
-    for result in reader.records() {
-        let record = result.unwrap();
-        let direction = record[0].to_string();
-        let year = record[1].parse::<u16>().unwrap();
-        let date = record[2].to_string();
-        let weekday = record[3].to_string();
-        let country = record[4].to_string();
-        let comodity = record[5].to_string();
-        let transport_mode = record[6].to_string();
-        let measure = record[7].to_string();
-        let value = record[8].parse::<u64>().unwrap();
-        let cumulative = record[9].parse::<u64>().unwrap();
+    while rdr.read_byte_record(&mut record).unwrap() {
+        let direction = String::from_utf8_lossy(&record[0]).into_owned();
+        let year = String::from_utf8_lossy(&record[1]).parse::<u16>().unwrap();
+        let date = String::from_utf8_lossy(&record[2]).into_owned();
+        let weekday = String::from_utf8_lossy(&record[3]).into_owned();
+        let country = String::from_utf8_lossy(&record[4]).into_owned();
+        let comodity = String::from_utf8_lossy(&record[5]).into_owned();
+        let transport_mode = String::from_utf8_lossy(&record[6]).into_owned();
+        let measure = String::from_utf8_lossy(&record[7]).into_owned();
+        let value = String::from_utf8_lossy(&record[8]).parse::<u64>().unwrap();
+        let cumulative = String::from_utf8_lossy(&record[9]).parse::<u64>().unwrap();
 
         data.push(
             Data {
@@ -143,7 +150,7 @@ fn read_data(filename: &str) -> Vec<Data> {
             });
     }
 
-    return data;
+    data
 }
 
 #[allow(dead_code)]
@@ -203,9 +210,11 @@ fn user_input() -> String {
     input
 }
 
-#[tokio::main]
-async fn main() {
+fn main() {
+    let start = SystemTime::now();
     let mut data_vector = read_data("effects.csv");
+    let end = SystemTime::now();
+    println!("Reading data took {} ms", end.duration_since(start).unwrap().as_millis());
     
     println!("Select sorting algorithm:");
     println!("1. Counting sort");
@@ -218,7 +227,7 @@ async fn main() {
     match choice.as_str() {
         "1" => {
             let start = SystemTime::now();
-            counting_sort(&mut data_vector).await;
+            counting_sort(&mut data_vector);
             let end = SystemTime::now();
             print_data(&data_vector);
             println!("Counting sort took {} ms", end.duration_since(start).unwrap().as_millis());
@@ -227,9 +236,11 @@ async fn main() {
         },
         "2" => {
             let start = SystemTime::now();
-            let sorted_data = merge_sort(&data_vector);
+            // let sorted_data = merge_sort(&data_vector);
+            merge_sort_par(&mut data_vector);
             let end = SystemTime::now();
-            print_data(&sorted_data);
+            // print_data(&sorted_data);
+            print_data(&data_vector);
             println!("Merge sort took {} ms", end.duration_since(start).unwrap().as_millis());
         },
         _ => {

@@ -3,6 +3,8 @@ use std::fs::File;
 use std::io::Write;
 use std::time::SystemTime;
 
+use csv::{ReaderBuilder, ByteRecord};
+
 mod tests;
 
 #[derive(Debug, Clone)]
@@ -35,7 +37,6 @@ impl Data {
         }
     }
 }
-
 fn heapify(data: &mut [Data], n: usize, i: usize) {
     let mut largest = i;
     let l = 2 * i + 1;
@@ -69,48 +70,57 @@ fn heap_sort(data: &mut [Data]) -> &mut [Data] {
     data
 }
 
-fn partition(data: &mut [Data], low: usize, high: usize) -> usize {
-    let pivot = data[high].cumulative;
-    let mut i = low;
-    let mut j = low;
-    while j < high {
-        if data[j].cumulative < pivot {
+fn quick_sort(data: &mut [Data]) {
+    if data.len() <= 1 {
+        return;
+    }
+
+    let pivot_index = partition(data);
+    quick_sort(&mut data[0..pivot_index]);
+    quick_sort(&mut data[pivot_index + 1..]);
+}
+
+fn partition(data: &mut [Data]) -> usize {
+    let pivot_index = data.len() / 2;
+    data.swap(pivot_index, data.len() - 1);
+
+    let mut i = 0;
+    for j in 0..data.len() - 1 {
+        if data[j].cumulative <= data[data.len() - 1].cumulative {
             data.swap(i, j);
             i += 1;
         }
-        j += 1;
     }
-    data.swap(i, high);
+
+    data.swap(i, data.len() - 1);
     i
 }
 
-fn quick_sort(data: &mut [Data], low: usize, high: usize) -> &mut [Data] {
-    if low < high {
-        let pi = partition(data, low, high);
-        if pi > low {
-            quick_sort(data, low, pi - 1);
-        }
-        quick_sort(data, pi + 1, high);
-    }
-    data
-}
-
 fn read_data(filename: &str) -> Vec<Data> {
-    let mut reader = csv::Reader::from_path(filename).unwrap();
-    let mut data = Vec::new();
+    let file = File::open(filename).expect("Unable to open file");
+    let mut rdr = ReaderBuilder::new()
+        .buffer_capacity(1 << 16) // Set buffer capacity to 64 KB
+        .has_headers(true) // Set this to false if your CSV doesn't have headers
+        .delimiter(b',') // Change this if your CSV uses a different delimiter
+        .quote(b'"') // Change this if your CSV uses a different quoting character
+        .escape(Some(b'\\')) // Change this if your CSV uses a different escape character
+        .double_quote(true) // Set this to false if your CSV doesn't use double quote escaping
+        .flexible(false) // Set this to true if your CSV has a variable number of fields per record
+        .from_reader(file);
+    let mut record = ByteRecord::new();
+    let mut data = Vec::with_capacity(111_438); // Preallocate memory based on an estimate
 
-    for result in reader.records() {
-        let record = result.unwrap();
-        let direction = record[0].to_string();
-        let year = record[1].parse::<u16>().unwrap();
-        let date = record[2].to_string();
-        let weekday = record[3].to_string();
-        let country = record[4].to_string();
-        let comodity = record[5].to_string();
-        let transport_mode = record[6].to_string();
-        let measure = record[7].to_string();
-        let value = record[8].parse::<u64>().unwrap();
-        let cumulative = record[9].parse::<u64>().unwrap();
+    while rdr.read_byte_record(&mut record).unwrap() {
+        let direction = String::from_utf8_lossy(&record[0]).into_owned();
+        let year = String::from_utf8_lossy(&record[1]).parse::<u16>().unwrap();
+        let date = String::from_utf8_lossy(&record[2]).into_owned();
+        let weekday = String::from_utf8_lossy(&record[3]).into_owned();
+        let country = String::from_utf8_lossy(&record[4]).into_owned();
+        let comodity = String::from_utf8_lossy(&record[5]).into_owned();
+        let transport_mode = String::from_utf8_lossy(&record[6]).into_owned();
+        let measure = String::from_utf8_lossy(&record[7]).into_owned();
+        let value = String::from_utf8_lossy(&record[8]).parse::<u64>().unwrap();
+        let cumulative = String::from_utf8_lossy(&record[9]).parse::<u64>().unwrap();
 
         data.push(
             Data {
@@ -189,7 +199,10 @@ fn user_input() -> String {
 fn main() {
     // let mut input = String::new();
 
+    let start = SystemTime::now();
     let mut data = read_data("effects.csv");
+    let end = SystemTime::now();
+    println!("Reading data took {} ms", end.duration_since(start).unwrap().as_millis());
     let len = data.len();
     
     println!("--------------------------------");
@@ -214,7 +227,7 @@ fn main() {
         },
         "2" => {
             let start = SystemTime::now();
-            quick_sort(&mut data, 0, len - 1);
+            quick_sort(&mut data);
             let end = SystemTime::now();
             print_data(&data);
             println!("Quick Sort took {} ms", end.duration_since(start).unwrap().as_millis());

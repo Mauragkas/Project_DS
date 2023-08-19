@@ -1,12 +1,13 @@
 #![allow(unused)]
+
+#[cfg(test)]
+
 use crate::Data;
 use crate::convert_date_to_days;
 use crate::read_data;
 use crate::binary_search;
 use crate::interpolation_search;
 use crate::in_range;
-
-#[cfg(test)]
 
 mod tests {
     use super::*;

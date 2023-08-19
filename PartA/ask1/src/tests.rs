@@ -1,6 +1,6 @@
 use crate::Data;
 use crate::counting_sort;
-use crate::merge_sort;
+use crate::merge_sort_par;
 use crate::read_data;
 
 #[cfg(test)]
@@ -14,7 +14,7 @@ mod ask1 {
         for (i, d) in data.iter_mut().enumerate() {
             d.value = nums[i] as u64;
         }
-        counting_sort(&mut data).await;
+        counting_sort(&mut data);
         for (i, d) in data.iter().enumerate() {
             assert_eq!(d.value, i as u64);
         }
@@ -27,8 +27,8 @@ mod ask1 {
         for (i, d) in data.iter_mut().enumerate() {
             d.value = nums[i] as u64;
         }
-        let sorted_data = merge_sort(&data);
-        for (i, d) in sorted_data.iter().enumerate() {
+        merge_sort_par(&mut data);
+        for (i, d) in data.iter().enumerate() {
             assert_eq!(d.value, i as u64);
         }
     }

@@ -1,4 +1,3 @@
-#![allow(unused)]
 use crate::Data;
 use crate::heap_sort;
 use crate::quick_sort;
@@ -29,7 +28,7 @@ mod ask2 {
             d.cumulative = nums[i] as u64;
         }
         let len = data.len();
-        quick_sort(&mut data, 0, len - 1);
+        quick_sort(&mut data);
         for (i, d) in data.iter().enumerate() {
             assert_eq!(d.cumulative, i as u64);
         }
