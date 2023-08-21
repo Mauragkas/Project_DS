@@ -43,6 +43,23 @@ impl Data {
     }
 }
 
+fn compare_data(d1: &Data, d2: &Data) -> cmp::Ordering {
+    let transform_date = |date: &str| -> String {
+        let parts: Vec<&str> = date.split('/').collect();
+        format!("{}/{}/{}", parts[2], parts[1], parts[0])
+    };
+    let transformed_date1 = transform_date(&d1.date);
+    let transformed_date2 = transform_date(&d2.date);
+
+    let date_cmp = transformed_date1.cmp(&transformed_date2);
+    if date_cmp == cmp::Ordering::Equal {
+        d1.value.cmp(&d2.value)
+    } else {
+        date_cmp
+    }
+}
+
+// Modified counting sort function that sorts by value first and then by date.
 fn counting_sort(data: &mut Vec<Data>) {
     let min_value = data.iter().map(|d| d.value).min().unwrap() as usize;
     let max_value = data.iter().map(|d| d.value).max().unwrap() as usize;
@@ -68,6 +85,8 @@ fn counting_sort(data: &mut Vec<Data>) {
         count_vec[value] += 1;
     }
 
+    // Sort the resulting vector by date using the custom comparison function.
+    sorted_data.sort_by(compare_data);
     *data = sorted_data;
 }
 
@@ -85,13 +104,14 @@ fn merge_sort_par(data: &mut [Data]) {
     merge(&mut left, &mut right, data);
 }
 
+// Modified merge function that uses the custom comparison function to merge two sorted slices back together.
 fn merge(left: &mut [Data], right: &mut [Data], data: &mut [Data]) {
     let mut left_index = 0;
     let mut right_index = 0;
 
     for i in 0..data.len() {
         if left_index < left.len() && right_index < right.len() {
-            if left[left_index].value < right[right_index].value {
+            if compare_data(&left[left_index], &right[right_index]) == cmp::Ordering::Less {
                 data[i] = left[left_index].clone();
                 left_index += 1;
             } else {
@@ -230,15 +250,12 @@ fn main() {
             let end = SystemTime::now();
             print_data(&data_vector);
             println!("Counting sort took {} ms", end.duration_since(start).unwrap().as_millis());
-            // println!("Counting sort took {} ns", end.duration_since(start).unwrap().as_nanos());
 
         },
         "2" => {
             let start = SystemTime::now();
-            // let sorted_data = merge_sort(&data_vector);
             merge_sort_par(&mut data_vector);
             let end = SystemTime::now();
-            // print_data(&sorted_data);
             print_data(&data_vector);
             println!("Merge sort took {} ms", end.duration_since(start).unwrap().as_millis());
         },

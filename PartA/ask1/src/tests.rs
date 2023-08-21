@@ -1,36 +1,103 @@
-use crate::Data;
-use crate::counting_sort;
-use crate::merge_sort_par;
-use crate::read_data;
+use super::*;
 
 #[cfg(test)]
-mod ask1 {
+mod tests {
     use super::*;
 
     #[test]
     fn test_counting_sort() {
-        let nums = vec![1, 4, 2, 0, 3];
-        let mut data = vec![Data::new(); nums.len()];
-        for (i, d) in data.iter_mut().enumerate() {
-            d.value = nums[i] as u64;
-        }
+        let mut data = vec![
+            Data {
+                direction: "Import".to_string(),
+                year: 2023,
+                date: "15/03/2023".to_string(),
+                weekday: "Wednesday".to_string(),
+                country: "USA".to_string(),
+                comodity: "Electronics".to_string(),
+                transport_mode: "Air".to_string(),
+                measure: "Units".to_string(),
+                value: 45,
+                cumulative: 150,
+            },
+            Data {
+                direction: "Export".to_string(),
+                year: 2023,
+                date: "10/01/2023".to_string(),
+                weekday: "Tuesday".to_string(),
+                country: "UK".to_string(),
+                comodity: "Cars".to_string(),
+                transport_mode: "Sea".to_string(),
+                measure: "Units".to_string(),
+                value: 20,
+                cumulative: 50,
+            },
+            Data {
+                direction: "Import".to_string(),
+                year: 2023,
+                date: "02/02/2023".to_string(),
+                weekday: "Thursday".to_string(),
+                country: "Canada".to_string(),
+                comodity: "Machinery".to_string(),
+                transport_mode: "Train".to_string(),
+                measure: "Units".to_string(),
+                value: 30,
+                cumulative: 100,
+            },
+        ];
+
         counting_sort(&mut data);
-        for (i, d) in data.iter().enumerate() {
-            assert_eq!(d.value, i as u64);
-        }
+
+        assert_eq!(data[0].date, "10/01/2023");
+        assert_eq!(data[1].date, "02/02/2023");
+        assert_eq!(data[2].date, "15/03/2023");
     }
 
     #[test]
-    fn test_merge_sort() {
-        let nums = vec![1, 4, 2, 0, 3];
-        let mut data = vec![Data::new(); nums.len()];
-        for (i, d) in data.iter_mut().enumerate() {
-            d.value = nums[i] as u64;
-        }
+    fn test_merge_sort_par() {
+        let mut data = vec![
+            Data {
+                direction: "Import".to_string(),
+                year: 2023,
+                date: "15/03/2023".to_string(),
+                weekday: "Wednesday".to_string(),
+                country: "USA".to_string(),
+                comodity: "Electronics".to_string(),
+                transport_mode: "Air".to_string(),
+                measure: "Units".to_string(),
+                value: 45,
+                cumulative: 150,
+            },
+            Data {
+                direction: "Export".to_string(),
+                year: 2023,
+                date: "10/01/2023".to_string(),
+                weekday: "Tuesday".to_string(),
+                country: "UK".to_string(),
+                comodity: "Cars".to_string(),
+                transport_mode: "Sea".to_string(),
+                measure: "Units".to_string(),
+                value: 20,
+                cumulative: 50,
+            },
+            Data {
+                direction: "Import".to_string(),
+                year: 2023,
+                date: "02/02/2023".to_string(),
+                weekday: "Thursday".to_string(),
+                country: "Canada".to_string(),
+                comodity: "Machinery".to_string(),
+                transport_mode: "Train".to_string(),
+                measure: "Units".to_string(),
+                value: 30,
+                cumulative: 100,
+            },
+        ];
+
         merge_sort_par(&mut data);
-        for (i, d) in data.iter().enumerate() {
-            assert_eq!(d.value, i as u64);
-        }
+
+        assert_eq!(data[0].date, "10/01/2023");
+        assert_eq!(data[1].date, "02/02/2023");
+        assert_eq!(data[2].date, "15/03/2023");
     }
 
     #[test]
