@@ -2,33 +2,34 @@
 
 ## Description
 
-This project is a command-line program written in Rust that reads data from a CSV file into a `Vec<Data>` where `Data` is a custom struct. It then sorts the data using either a counting sort or merge sort algorithm. The user can choose which algorithm to use. 
+This project is a command-line program written in Rust that reads data from a CSV file into a `Vec<Data>` where `Data` is a custom struct. It sorts the data using either a counting sort or merge sort algorithm. The user can choose which algorithm to use at runtime.
 
 The CSV file contains trade data with several fields such as `direction`, `year`, `date`, `weekday`, `country`, `commodity`, `transport_mode`, `measure`, `value`, and `cumulative`. These fields are reflected in the `Data` struct.
 
-The program offers the functionality to print the sorted data to the console or to save it to a new CSV file.
+The program can print the sorted data to the console.
 
 ## Performance Improvements
 
-### Concurrency in Counting Sort
+### Counting Sort
 
-The counting sort implementation was enhanced by leveraging Rust's async programming features to achieve concurrency. This allows multiple elements of the data to be processed simultaneously.
+The counting sort algorithm sorts data by value and then by date. It uses a custom comparison function that takes into account both the value and the date. This ensures a stable sort with the correct ordering of data records.
 
-This concurrency is achieved by spinning up asynchronous tasks that process different parts of the count vector in parallel, each of which increases the count of a specific value. To ensure safe concurrent access to the count vector, it is wrapped in an `Arc<Mutex<_>>`. 
+Counting sort works by creating a count vector with a size equal to the range of the input data (max - min + 1). Each element in the count vector represents the number of occurrences of a specific value. Then, it populates a sorted array using the count vector.
 
-The `Arc` (Atomic Reference Count) ensures that the count vector can be safely shared across multiple tasks, and the `Mutex` (Mutual Exclusion) ensures that only one task can mutate the count vector at any given time.
-
-With this concurrency improvement, the counting sort algorithm was found to be about 33% faster, reducing the time from ~6s to ~4s on the tested dataset.
-
-However, it's important to note that counting sort's efficiency highly depends on the range of the input data. It performs best when the difference between the maximum and minimum values is not significantly greater than the number of input data.
+This algorithm is efficient for sorting data with a small range of values and a large number of records. However, it may not be suitable for data with a wide range of values.
 
 ### Merge Sort
 
-In addition to counting sort, this program offers a merge sort algorithm for sorting the data. While merge sort doesn't use concurrency, it's still efficient for larger data sets or data sets with a larger range of values. Merge sort has a time complexity of O(n log n), which can be faster than counting sort in some cases (not this time, though).
+The merge sort algorithm was implemented using Rust's rayon crate for parallelism. The program divides the data into smaller chunks, sorts each chunk in parallel, and then merges the sorted chunks back together.
+
+Merge sort has a time complexity of O(n log n) and is an efficient sorting algorithm for large datasets. Its parallel implementation further improves its performance by utilizing multiple CPU cores.
 
 ## Usage
 
-1. Select the sorting algorithm: enter `1` for counting sort or `2` for merge sort.
-2. The sorted data will be printed to the console, along with the time taken by the sorting operation.
+1. Run the program.
+2. Select the sorting algorithm: enter `1` for counting sort or `2` for merge sort.
+3. The sorted data will be printed to the console, along with the time taken by the sorting operation.
 
-The program also includes the option to save the sorted data to a CSV file, but this feature is currently disabled (`#[allow(dead_code)]`). To enable it, simply remove this attribute and call the `save_to_file` function with the sorted data and the desired filename.
+The program includes the option to save the sorted data to a CSV file, but this feature is currently disabled (`#[allow(unused)]`). To enable it, remove this attribute and call the `save_to_file` function with the sorted data and the desired filename.
+
+---
