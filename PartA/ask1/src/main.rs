@@ -90,41 +90,46 @@ fn counting_sort(data: &mut Vec<Data>) {
     *data = sorted_data;
 }
 
-fn merge_sort_par(data: &mut [Data]) {
-    if data.len() <= 1 {
+fn merge_sort_par(data: &mut [Data], buffer: &mut [Data]) {
+    let len = data.len();
+    if len <= 1 {
         return;
     }
 
-    let mid = data.len() / 2;
+    let mid = len / 2;
     let (left, right) = data.split_at_mut(mid);
+    let (left_buf, right_buf) = buffer.split_at_mut(mid);
 
-    rayon::join(|| merge_sort_par(left), || merge_sort_par(right));
-    let mut left = left.to_vec();
-    let mut right = right.to_vec();
-    merge(&mut left, &mut right, data);
+    rayon::join(|| merge_sort_par(left, left_buf), || merge_sort_par(right, right_buf));
+
+    merge(left, right, buffer);
+    
+    // Swapping elements instead of cloning
+    for (d, b) in data.iter_mut().zip(buffer.iter_mut()) {
+        std::mem::swap(d, b);
+    }
 }
 
-// Modified merge function that uses the custom comparison function to merge two sorted slices back together.
-fn merge(left: &mut [Data], right: &mut [Data], data: &mut [Data]) {
-    let mut left_index = 0;
-    let mut right_index = 0;
+fn merge(left: &[Data], right: &[Data], buffer: &mut [Data]) {
+    let (mut left_idx, mut right_idx, mut buf_idx) = (0, 0, 0);
 
-    for i in 0..data.len() {
-        if left_index < left.len() && right_index < right.len() {
-            if compare_data(&left[left_index], &right[right_index]) == cmp::Ordering::Less {
-                data[i] = left[left_index].clone();
-                left_index += 1;
+    while buf_idx < buffer.len() {
+        if left_idx < left.len() && right_idx < right.len() {
+            if compare_data(&left[left_idx], &right[right_idx]) == cmp::Ordering::Less {
+                buffer[buf_idx] = left[left_idx].clone();
+                left_idx += 1;
             } else {
-                data[i] = right[right_index].clone();
-                right_index += 1;
+                buffer[buf_idx] = right[right_idx].clone();
+                right_idx += 1;
             }
-        } else if left_index < left.len() {
-            data[i] = left[left_index].clone();
-            left_index += 1;
+        } else if left_idx < left.len() {
+            buffer[buf_idx] = left[left_idx].clone();
+            left_idx += 1;
         } else {
-            data[i] = right[right_index].clone();
-            right_index += 1;
+            buffer[buf_idx] = right[right_idx].clone();
+            right_idx += 1;
         }
+        buf_idx += 1;
     }
 }
 
@@ -198,6 +203,13 @@ fn print_data(data: &Vec<Data>) {
 fn save_to_file(data: &Vec<Data>, filename: &str) {
     let mut file = File::create(filename).expect("Unable to create file");
     writeln!(file, "Direction,Year,Date,Weekday,Country,Commodity,Transport_Mode,Measure,Value,Cumulative").expect("Unable to write header");
+    let surround_with_quotes_if_comma = |string: &str| -> String {
+        if string.contains(",") {
+            format!("\"{}\"", string)
+        } else {
+            String::from(string)
+        }
+    };
     for d in data {
         writeln!(file, "{},{},{},{},{},{},{},{},{},{}",
             surround_with_quotes_if_comma(d.direction.as_str()),
@@ -211,14 +223,6 @@ fn save_to_file(data: &Vec<Data>, filename: &str) {
             d.value,
             d.cumulative
         ).expect("Unable to write data");
-    }
-}
-
-fn surround_with_quotes_if_comma(string: &str) -> String {
-    if string.contains(",") {
-        format!("\"{}\"", string)
-    } else {
-        String::from(string)
     }
 }
 
@@ -254,7 +258,8 @@ fn main() {
         },
         "2" => {
             let start = SystemTime::now();
-            merge_sort_par(&mut data_vector);
+            let mut buffer = vec![Data::new(); data_vector.len()];
+            merge_sort_par(&mut data_vector, &mut buffer);
             let end = SystemTime::now();
             print_data(&data_vector);
             println!("Merge sort took {} ms", end.duration_since(start).unwrap().as_millis());

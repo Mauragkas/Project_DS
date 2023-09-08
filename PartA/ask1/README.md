@@ -20,9 +20,17 @@ This algorithm is efficient for sorting data with a small range of values and a 
 
 ### Merge Sort
 
-The merge sort algorithm was implemented using Rust's rayon crate for parallelism. The program divides the data into smaller chunks, sorts each chunk in parallel, and then merges the sorted chunks back together.
+The merge sort algorithm was optimized for better performance and resource utilization. It still leverages Rust's rayon crate for parallelism but introduces the following changes to improve efficiency:
 
-Merge sort has a time complexity of O(n log n) and is an efficient sorting algorithm for large datasets. Its parallel implementation further improves its performance by utilizing multiple CPU cores.
+1. **Buffering**: An additional buffer array is used, eliminating the need for cloning elements. This reduces both memory allocation and deallocation, thereby enhancing the algorithm's speed.
+  
+2. **In-Place Sorting**: The algorithm now performs in-place sorting using a single mutable buffer that's passed along during recursive splits and merges. This further reduces the overhead associated with data movement.
+
+3. **Swapping**: `std::mem::swap` is used to switch the sorted and unsorted data between the original array and the buffer. This is more efficient than traditional element-wise assignment.
+
+These modifications collectively reduce the computational overhead, providing a more efficient sorting process. Merge sort retains its O(n log n) time complexity but the constant factors are improved, especially beneficial for sorting large datasets.
+
+The parallel implementation, coupled with these optimizations, makes this version of merge sort highly efficient, taking full advantage of multiple CPU cores for quicker sorting tasks.
 
 ## Usage
 
