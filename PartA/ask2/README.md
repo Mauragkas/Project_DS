@@ -19,6 +19,32 @@ The code is divided into several functions:
 - `user_input`: Reads a line from the standard input and returns it as a string.
 - `main`: Reads the CSV data, prints the number of records, prompts the user to choose a sorting algorithm, sorts the data using the chosen algorithm, and prints the sorted data and the time taken to sort the data.
 
+## Performance Gains
+
+### Stages of Quick Sort Optimization
+
+Our Quick Sort algorithm went through two significant optimizations:
+
+1. **Pivot Change (160ms to 60ms)**: The initial improvement was achieved by changing the pivot selection strategy. This single change reduced the sorting time from 160ms to 60ms. The algorithm was still single-threaded at this stage.
+
+2. **Parallelization with Rayon (60ms to 15ms)**: The second stage of optimization involved using the Rayon library for parallelization. This change further reduced the time from 60ms to an astounding 15ms.
+
+#### Key Highlights
+
+1. **Pivot Selection**: The selection of a better pivot led to a more balanced partitioning, reducing the algorithm's time complexity and thus achieving a sort time of 60ms from the original 160ms.
+
+2. **Parallelization**: Using Rust's `rayon` crate, we were able to sort both halves of the partitioned array in parallel, cutting down the sort time to 15ms.
+
+    ```rust
+    rayon::join(|| quick_sort(left), || quick_sort(&mut right[1..]));
+    ```
+
+3. **Scalability**: The parallel version of Quick Sort is highly scalable. More CPU cores equate to faster sort times.
+
+4. **CPU Utilization**: Rayon's work-stealing algorithm ensures optimal CPU utilization.
+
+5. **Data Locality**: The use of Rayon also optimizes for data locality, further enhancing performance.
+
 ## Performance Tweaks
 
 The program has implemented a few performance tweaks to optimize the sorting process:

@@ -7,6 +7,8 @@ use csv::{ReaderBuilder, ByteRecord};
 
 mod tests;
 
+use rayon::prelude::*;
+
 #[derive(Debug, Clone)]
 struct Data {
     direction: String,
@@ -76,8 +78,10 @@ fn quick_sort(data: &mut [Data]) {
     }
 
     let pivot_index = partition(data);
-    quick_sort(&mut data[0..pivot_index]);
-    quick_sort(&mut data[pivot_index + 1..]);
+
+    let (left, right) = data.split_at_mut(pivot_index);
+
+    rayon::join(|| quick_sort(left), || quick_sort(&mut right[1..]));
 }
 
 fn partition(data: &mut [Data]) -> usize {
@@ -225,6 +229,7 @@ fn main() {
             print_data(&data);
             println!("Heap Sort took {} ms", end.duration_since(start).unwrap().as_millis());
         },
+
         "2" => {
             let start = SystemTime::now();
             quick_sort(&mut data);
