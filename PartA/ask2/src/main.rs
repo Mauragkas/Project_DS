@@ -72,7 +72,7 @@ fn heap_sort(data: &mut [Data]) -> &mut [Data] {
     data
 }
 
-fn quick_sort(data: &mut [Data]) {
+fn quick_sort_par(data: &mut [Data]) {
     if data.len() <= 1 {
         return;
     }
@@ -81,7 +81,7 @@ fn quick_sort(data: &mut [Data]) {
 
     let (left, right) = data.split_at_mut(pivot_index);
 
-    rayon::join(|| quick_sort(left), || quick_sort(&mut right[1..]));
+    rayon::join(|| quick_sort_par(left), || quick_sort_par(&mut right[1..]));
 }
 
 fn partition(data: &mut [Data]) -> usize {
@@ -232,7 +232,7 @@ fn main() {
 
         "2" => {
             let start = SystemTime::now();
-            quick_sort(&mut data);
+            quick_sort_par(&mut data);
             let end = SystemTime::now();
             print_data(&data);
             println!("Quick Sort took {} ms", end.duration_since(start).unwrap().as_millis());

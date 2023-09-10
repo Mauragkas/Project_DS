@@ -11,7 +11,7 @@ The code is divided into several functions:
 - `heapify`: Helper function used in Heap Sort. This function maintains the heap property, i.e., for any given node i, the value of i is not smaller than the values of its children.
 - `heap_sort`: Implementation of Heap Sort algorithm.
 - `partition`: Helper function used in Quick Sort. This function takes the last element as a pivot, places the pivot at its correct position, and places all smaller elements to the left of the pivot and all larger elements to the right of the pivot.
-- `quick_sort`: Implementation of Quick Sort algorithm.
+- `quick_sort_par`: Implementation of Quick Sort algorithm.
 - `read_data`: Reads a CSV file and returns a vector of `Data` structs.
 - `print_data`: Prints the data.
 - `save_to_file`: Writes the sorted data to a file.
@@ -36,7 +36,7 @@ Our Quick Sort algorithm went through two significant optimizations:
 2. **Parallelization**: Using Rust's `rayon` crate, we were able to sort both halves of the partitioned array in parallel, cutting down the sort time to 15ms.
 
     ```rust
-    rayon::join(|| quick_sort(left), || quick_sort(&mut right[1..]));
+    rayon::join(|| quick_sort_par(left), || quick_sort_par(&mut right[1..]));
     ```
 
 3. **Scalability**: The parallel version of Quick Sort is highly scalable. More CPU cores equate to faster sort times.

@@ -141,7 +141,8 @@ mod tests {
             },
         ];
 
-        merge_sort_par(&mut data);
+        let mut buffer = vec![Data::new(); data.len()];
+        merge_sort_par(&mut data, &mut buffer);
 
         assert_eq!(data[0].date, "10/01/2023");
         assert_eq!(data[1].date, "02/02/2023");
@@ -189,7 +190,8 @@ mod tests {
             },
         ];
 
-        merge_sort_par(&mut data);
+        let mut buffer = vec![Data::new(); data.len()];
+        merge_sort_par(&mut data, &mut buffer);
 
         assert_eq!(data[0].value, 1);
         assert_eq!(data[1].value, 2);
