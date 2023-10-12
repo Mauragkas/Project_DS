@@ -110,23 +110,21 @@ fn merge_sort_par(data: &mut [Data], buffer: &mut [Data]) {
     }
 }
 
-fn merge(left: &[Data], right: &[Data], buffer: &mut [Data]) {
+fn merge(left: &mut [Data], right: &mut [Data], buffer: &mut [Data]) {
     let (mut left_idx, mut right_idx, mut buf_idx) = (0, 0, 0);
 
     while buf_idx < buffer.len() {
-        if left_idx < left.len() && right_idx < right.len() {
-            if compare_data(&left[left_idx], &right[right_idx]) == cmp::Ordering::Less {
-                buffer[buf_idx] = left[left_idx].clone();
-                left_idx += 1;
-            } else {
-                buffer[buf_idx] = right[right_idx].clone();
-                right_idx += 1;
-            }
-        } else if left_idx < left.len() {
-            buffer[buf_idx] = left[left_idx].clone();
+        let take_from_left = if left_idx < left.len() && right_idx < right.len() {
+            compare_data(&left[left_idx], &right[right_idx]) == cmp::Ordering::Less
+        } else {
+            left_idx < left.len()
+        };
+
+        if take_from_left {
+            std::mem::swap(&mut buffer[buf_idx], &mut left[left_idx]);
             left_idx += 1;
         } else {
-            buffer[buf_idx] = right[right_idx].clone();
+            std::mem::swap(&mut buffer[buf_idx], &mut right[right_idx]);
             right_idx += 1;
         }
         buf_idx += 1;
