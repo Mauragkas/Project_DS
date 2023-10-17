@@ -77,17 +77,11 @@ fn counting_sort(data: &mut Vec<Data>) {
         total += old_count;
     }
 
-    let mut sorted_data = vec![Data::new(); data.len()];
-    for d in data.iter() {
-        let value = d.value as usize - min_value;
-        let index = count_vec[value];
-        sorted_data[index] = d.clone();
-        count_vec[value] += 1;
-    }
+    // Sort the data vector by date using the custom comparison function.
+    data.sort_by(compare_data);
 
-    // Sort the resulting vector by date using the custom comparison function.
-    sorted_data.sort_by(compare_data);
-    *data = sorted_data;
+    // Reclaim memory for the count_vec.
+    count_vec.shrink_to_fit();
 }
 
 fn merge_sort_par(data: &mut [Data], buffer: &mut [Data]) {
